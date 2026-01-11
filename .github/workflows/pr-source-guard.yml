@@ -1,0 +1,20 @@
+name: PR source guard
+
+on:
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  allow-only-dev:
+    name: Allow only dev -> master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check head branch is dev
+        run: |
+          if [ "${{ github.head_ref }}" != "dev" ]; then
+            echo "❌ master 브랜치에는 dev 브랜치에서만 PR 가능합니다."
+            echo "현재 PR source: ${{ github.head_ref }}"
+            exit 1
+          fi
+
+          echo "✅ dev -> master PR이므로 통과합니다."
