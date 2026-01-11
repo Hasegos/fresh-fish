@@ -17,4 +17,4 @@ jobs:
             exit 1
           fi
 
-          echo "✅ dev -> master PR이므로 통과합니다."   
+          echo "✅ dev -> master PR이므로 통과합니다." 
