@@ -1,177 +1,161 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../models/user_data.dart';
-import '../models/quest.dart';
-import '../models/daily_record.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+import '../models/user_data_model.dart';
+import '../models/fish_model.dart';
+import '../models/quest_model.dart';
+import 'firebase_service.dart';
 
+/// 로컬 저장소 서비스
 class StorageService {
-  static final FirebaseFirestore _db = FirebaseFirestore.instance;
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final StorageService _instance = StorageService._internal();
+  factory StorageService() => _instance;
+  StorageService._internal();
 
-  /// 앱 시작 시 한 번 호출 (main.dart에서 이미 호출 중)
-  /// - Firebase Auth 익명 로그인 보장
-  static Future<void> init() async {
-    if (_auth.currentUser == null) {
-      await _auth.signInAnonymously();
+  static const String _userDataKey = 'user_data';
+  final FirebaseService _firebaseService = FirebaseService();
+  final Uuid _uuid = const Uuid();
+
+  /// 사용자 데이터 저장 (로컬 + Firebase)
+  Future<void> saveUserData(UserData userData) async {
+    try {
+      // 로컬 저장
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = json.encode(userData.toJson());
+      await prefs.setString(_userDataKey, jsonString);
+
+      // Firebase 저장 (백그라운드)
+      _firebaseService.saveUserData(userData).catchError((e) {
+        print('Firebase 저장 실패 (무시): $e');
+      });
+    } catch (e) {
+      print('로컬 저장 실패: $e');
+      rethrow;
     }
   }
 
-  static String get _uid {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw StateError('Firebase Auth user is null. StorageService.init() 먼저 호출해야 합니다.');
+  /// 사용자 데이터 불러오기
+  Future<UserData?> getUserData() async {
+    try {
+      // 먼저 로컬에서 불러오기
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_userDataKey);
+
+      if (jsonString != null) {
+        final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+        return UserData.fromJson(jsonMap);
+      }
+
+      // 로컬에 없으면 Firebase에서 시도
+      final firebaseData = await _firebaseService.getUserData();
+      if (firebaseData != null) {
+        // Firebase 데이터를 로컬에 저장
+        await saveUserData(firebaseData);
+        return firebaseData;
+      }
+    } catch (e) {
+      print('데이터 불러오기 실패: $e');
     }
-    return user.uid;
+
+    return null;
   }
 
-  static DocumentReference<Map<String, dynamic>> get _userDoc =>
-      _db.collection('users').doc(_uid);
-
-  // ======================
-  // User Data
-  // ======================
-  static Future<void> saveUserData(UserData userData) async {
-    await _userDoc.set(
-      {
-        'userData': userData.toJson(),
-      },
-      SetOptions(merge: true),
-    );
+  /// 사용자 데이터 삭제
+  Future<void> clearUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_userDataKey);
+      await _firebaseService.deleteUserData();
+    } catch (e) {
+      print('데이터 삭제 실패: $e');
+    }
   }
 
-  static Future<UserData?> getUserData() async {
-    final snap = await _userDoc.get();
-    if (!snap.exists) return null;
+  /// 초기 사용자 생성
+  UserData createInitialUser(
+    FishType fishType,
+    List<String> selectedCategories,
+  ) {
+    final now = DateTime.now();
+    final dateString = _formatDate(now);
 
-    final data = snap.data();
-    if (data == null) return null;
-
-    final userJson = data['userData'];
-    if (userJson == null) return null;
-
-    // userJson 이 Map<String, dynamic> 형태라고 가정
-    return UserData.fromJson(
-      Map<String, dynamic>.from(userJson as Map),
-    );
-  }
-
-  static Future<void> deleteUserData() async {
-    await _userDoc.update({
-      'userData': FieldValue.delete(),
-    });
-  }
-
-  // ======================
-  // Daily Quests
-  // ======================
-  /// date 예: '2026-01-09'
-  static Future<void> saveDailyQuests(List<Quest> quests, String date) async {
-    final questsJson = quests.map((q) => q.toJson()).toList();
-
-    await _userDoc.set(
-      {
-        'dailyQuests': questsJson,
-        'questDate': date,
-      },
-      SetOptions(merge: true),
-    );
-  }
-
-  static Future<List<Quest>?> getDailyQuests(String date) async {
-    final snap = await _userDoc.get();
-    if (!snap.exists) return null;
-
-    final data = snap.data();
-    if (data == null) return null;
-
-    final savedDate = data['questDate'] as String?;
-    if (savedDate != date) return null;
-
-    final questsJson = data['dailyQuests'] as List<dynamic>?;
-    if (questsJson == null) return null;
-
-    return questsJson
-        .map(
-          (q) => Quest.fromJson(
-        Map<String, dynamic>.from(q as Map),
+    return UserData(
+      id: _uuid.v4(),
+      fish: Fish(
+        id: _uuid.v4(),
+        type: fishType,
+        level: 1,
+        exp: 0,
+        hp: 100,
+        maxHp: 100,
+        eggHatchedAt: now.millisecondsSinceEpoch,
       ),
-    )
-        .toList();
-  }
-
-  // ======================
-  // History
-  // ======================
-  static Future<void> saveHistory(List<DailyRecord> history) async {
-    final historyJson = history.map((r) => r.toJson()).toList();
-
-    await _userDoc.set(
-      {
-        'history': historyJson,
-      },
-      SetOptions(merge: true),
+      gold: 0,
+      currentDate: dateString,
+      quests: _generateInitialQuests(selectedCategories, dateString),
+      habits: [],
+      todos: [],
+      history: [],
+      onboardingCompleted: true,
+      selectedCategories: selectedCategories,
+      waterQuality: 100,
+      achievements: [],
+      customRewards: [],
+      decorations: [],
+      ownedDecorations: [],
     );
   }
 
-  static Future<List<DailyRecord>> getHistory() async {
-    final snap = await _userDoc.get();
-    if (!snap.exists) return [];
+  /// 초기 퀘스트 생성
+  List<Quest> _generateInitialQuests(List<String> categories, String date) {
+    final quests = <Quest>[];
 
-    final data = snap.data();
-    if (data == null) return [];
-
-    final historyJson = data['history'] as List<dynamic>?;
-    if (historyJson == null) return [];
-
-    return historyJson
-        .map(
-          (r) => DailyRecord.fromJson(
-        Map<String, dynamic>.from(r as Map),
-      ),
-    )
-        .toList();
-  }
-
-  // ======================
-  // Clear all data (이 유저의 문서 통째로 삭제)
-  // ======================
-  static Future<void> clearAll() async {
-    await _userDoc.delete();
-  }
-
-  // ======================
-  // Quest Templates (기존 로직 그대로 유지)
-  // ======================
-  static List<Map<String, dynamic>> getQuestTemplates() {
-    return [
-      {'title': '물 8잔 마시기', 'exp': 50},
-      {'title': '30분 운동하기', 'exp': 100},
-      {'title': '아침 먹기', 'exp': 50},
-      {'title': '10분 명상하기', 'exp': 80},
-      {'title': '책 30분 읽기', 'exp': 70},
-      {'title': '스트레칭 15분', 'exp': 60},
-      {'title': '10,000보 걷기', 'exp': 120},
-      {'title': '간식 줄이기', 'exp': 60},
-      {'title': '일찍 잠자리에 들기', 'exp': 80},
-      {'title': '감사 일기 쓰기', 'exp': 70},
-      {'title': '핸드폰 사용 1시간 줄이기', 'exp': 90},
-      {'title': '채소 먹기', 'exp': 50},
-    ];
-  }
-
-  static List<Quest> generateRandomQuests() {
-    final templates = getQuestTemplates()..shuffle();
-    final selected = templates.take(4).toList();
-
-    return selected.asMap().entries.map((entry) {
-      final index = entry.key;
-      final template = entry.value;
-      return Quest(
-        id: 'quest-$index-${DateTime.now().millisecondsSinceEpoch}',
-        title: template['title'] as String,
-        exp: template['exp'] as int,
+    for (final category in categories) {
+      // 각 카테고리마다 2개의 퀘스트 생성
+      quests.add(Quest(
+        id: _uuid.v4(),
+        title: _getQuestTitle(category, Difficulty.easy),
+        category: category,
         completed: false,
-      );
-    }).toList();
+        date: date,
+        expReward: 15,
+        goldReward: 8,
+        questType: QuestType.daily,
+        difficulty: Difficulty.easy,
+      ));
+
+      quests.add(Quest(
+        id: _uuid.v4(),
+        title: _getQuestTitle(category, Difficulty.normal),
+        category: category,
+        completed: false,
+        date: date,
+        expReward: 25,
+        goldReward: 15,
+        questType: QuestType.daily,
+        difficulty: Difficulty.normal,
+      ));
+    }
+
+    return quests;
+  }
+
+  /// 카테고리별 퀘스트 제목
+  String _getQuestTitle(String category, Difficulty difficulty) {
+    final templates = {
+      '학업': ['30분 공부하기', '강의 1개 듣기', '복습 30분 하기'],
+      '건강': ['30분 운동하기', '스트레칭 10분', '물 8잔 마시기'],
+      '자기계발': ['책 30페이지 읽기', '명상 10분', '새로운 것 배우기'],
+      '생활': ['방 정리하기', '설거지하기', '청소 10분'],
+    };
+
+    final categoryTemplates = templates[category] ?? ['퀘스트 완료하기'];
+    final index = difficulty.index % categoryTemplates.length;
+    return categoryTemplates[index];
+  }
+
+  /// 날짜 포맷
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }
