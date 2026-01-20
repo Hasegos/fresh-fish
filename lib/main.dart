@@ -2,38 +2,50 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/app_provider.dart';
-import 'screens/app_screen.dart';
-void main() async {
+
+// ✅ 로그인 화면으로 시작하고 싶으면 이 import 필요
+import 'screens/auth/login_screen.dart';
+
+// 만약 파일 경로/이름이 다르면 위 import만 네 프로젝트에 맞게 수정!
+// 예) import 'screens/auth/login_screen.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // 💡 Gradle이 파일을 못 읽을 때 사용하는 수동 초기화 방식입니다.
-    // google-services.json 파일 안의 값들을 아래에 매칭시키세요.
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "AIzaSy...",          // api_key의 current_key 값
-        appId: "1:12345:android:...", // mobilesdk_app_id 값
-        messagingSenderId: "12345...", // project_number 값
-        projectId: "your-project-id",  // project_id 값
+        apiKey: "AIzaSy...",
+        appId: "1:12345:android:...",
+        messagingSenderId: "12345...",
+        projectId: "your-project-id",
       ),
     );
-    debugPrint('✅ Firebase 수동 초기화 성공');
+    debugPrint('✅ Firebase 초기화 성공');
+  } on FirebaseException catch (e) {
+    // ✅ Hot restart에서 네이티브는 이미 DEFAULT가 살아있을 수 있음
+    if (e.code == 'duplicate-app') {
+      final app = Firebase.app(); // 이미 존재하는 DEFAULT 가져오기
+      debugPrint('✅ Firebase 이미 존재함 -> 재사용: ${app.name}');
+    } else {
+      debugPrint('⚠️ Firebase 초기화 실패(FirebaseException): ${e.code} / ${e.message}');
+    }
   } catch (e) {
-    debugPrint('⚠️ Firebase 초기화 실패: $e');
+    debugPrint('⚠️ Firebase 초기화 실패(기타): $e');
   }
 
   runApp(const MyTinyAquariumApp());
 }
 
 class MyTinyAquariumApp extends StatelessWidget {
-  const MyTinyAquariumApp({Key? key}) : super(key: key);
+  const MyTinyAquariumApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 전역 상태 관리 도구인 Provider를 앱 최상단에 배치합니다.
     return ChangeNotifierProvider(
-      create: (_) => AppProvider()..initialize(), // 앱 시작 시 데이터 로드
+      create: (_) => AppProvider()..initialize(),
       child: MaterialApp(
         title: 'My Tiny Aquarium',
         debugShowCheckedModeBanner: false,
@@ -42,7 +54,9 @@ class MyTinyAquariumApp extends StatelessWidget {
           brightness: Brightness.dark,
           primarySwatch: Colors.blue,
         ),
-        home: const AppScreen(), // 메인 화면으로 이동
+
+        // ✅ 무조건 로그인 화면부터 시작 (처음부터 테스트용)
+        home: const LoginScreen(),
       ),
     );
   }
