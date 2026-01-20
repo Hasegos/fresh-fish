@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../models/fish_model.dart';
+// UserData 모델이 정의된 파일도 임포트해야 합니다.
+// import '../../models/user_data.dart';
 
 /// 수족관 화면
 class AquariumScreen extends StatelessWidget {
@@ -14,10 +16,7 @@ class AquariumScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1A3A52),
-            Color(0xFF0D1B2A),
-          ],
+          colors: [Color(0xFF1A3A52), Color(0xFF0D1B2A)],
         ),
       ),
       child: SafeArea(
@@ -25,68 +24,23 @@ class AquariumScreen extends StatelessWidget {
           builder: (context, provider, child) {
             final userData = provider.userData;
             if (userData == null) {
-              return const Center(child: Text('데이터 없음'));
+              return const Center(child: Text('데이터 없음', style: TextStyle(color: Colors.white)));
             }
 
             final fish = userData.fish;
+            // [How] fish 객체를 전달하여 현재 성장 단계를 계산합니다.
             final stage = _getGrowthStage(fish);
 
             return Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // 헤더
                   _buildHeader(userData),
                   const SizedBox(height: 24),
-
-                  // 수족관
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E2A3A).withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: const Color(0xFF4FC3F7).withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // 물고기
-                            Text(
-                              _getFishEmoji(stage),
-                              style: const TextStyle(fontSize: 120),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // 레벨
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E2A3A),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '레벨 ${fish.level}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    child: _buildAquariumDisplay(stage, fish),
                   ),
                   const SizedBox(height: 24),
-
-                  // 통계
                   _buildStats(fish, userData),
                 ],
               ),
@@ -97,85 +51,75 @@ class AquariumScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(userData) {
+  // [How] userData에 dynamic 또는 정확한 타입을 명시합니다.
+  Widget _buildHeader(dynamic userData) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'My Aquarium',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E2A3A),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${userData.gold}G',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFD700),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        const Text('My Aquarium', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+        _buildGoldDisplay(userData.gold.toString()),
       ],
     );
   }
 
-  Widget _buildStats(fish, userData) {
+  Widget _buildGoldDisplay(String gold) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(color: const Color(0xFF1E2A3A), borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        children: [
+          const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 16),
+          const SizedBox(width: 4),
+          Text('${gold}G', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAquariumDisplay(GrowthStage stage, dynamic fish) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2A3A).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF4FC3F7).withOpacity(0.3), width: 2),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_getFishEmoji(stage), style: const TextStyle(fontSize: 120)),
+            const SizedBox(height: 16),
+            Text('레벨 ${fish.level}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // [Critical Fix] 매개변수에 정확한 타입을 명시하거나 명시적 형변환을 사용합니다.
+  Widget _buildStats(dynamic fish, dynamic userData) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF1E2A3A), borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          // HP
           _buildStatBar(
             label: 'HP',
-            value: fish.hp,
-            maxValue: fish.maxHp,
-            color: _getHpColor(fish.hp),
+            value: fish.hp as int, // [How] dynamic을 int로 명시적 형변환
+            maxValue: fish.maxHp as int,
+            color: _getHpColor(fish.hp as int),
           ),
           const SizedBox(height: 16),
-
-          // 경험치
           _buildStatBar(
             label: 'EXP',
-            value: fish.exp,
+            value: fish.exp as int,
             maxValue: 100,
             color: const Color(0xFF4FC3F7),
           ),
           const SizedBox(height: 16),
-
-          // 수질
           _buildStatBar(
             label: '수질',
-            value: userData.waterQuality,
+            value: userData.waterQuality as int,
             maxValue: 100,
             color: Colors.blue,
           ),
@@ -184,55 +128,31 @@ class AquariumScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatBar({
-    required String label,
-    required int value,
-    required int maxValue,
-    required Color color,
-  }) {
+  Widget _buildStatBar({required String label, required int value, required int maxValue, required Color color}) {
     final progress = (value / maxValue).clamp(0.0, 1.0);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              '$value/$maxValue',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-            ),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text('$value/$maxValue', style: const TextStyle(fontSize: 14, color: Colors.white70)),
           ],
         ),
         const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.white10,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 8,
-          ),
-        ),
+        LinearProgressIndicator(value: progress, backgroundColor: Colors.white10, valueColor: AlwaysStoppedAnimation<Color>(color), minHeight: 8),
       ],
     );
   }
 
-  GrowthStage _getGrowthStage(fish) {
+  GrowthStage _getGrowthStage(dynamic fish) {
     if (fish.eggHatchedAt == null) return GrowthStage.adult;
 
+    // [Why] 현재 시간과 부화 시간의 차이를 계산하여 성장 단계를 결정합니다.
+    // 수식: $$ \text{hours} = \frac{\text{currentTime} - \text{hatchedTime}}{1000 \text{ms} \times 60 \text{s} \times 60 \text{m}} $$
     final now = DateTime.now().millisecondsSinceEpoch;
-    final elapsed = now - fish.eggHatchedAt!;
+    final elapsed = now - (fish.eggHatchedAt as int);
     final hours = elapsed / (1000 * 60 * 60);
 
     if (hours < 24) return GrowthStage.egg;
@@ -242,12 +162,9 @@ class AquariumScreen extends StatelessWidget {
 
   String _getFishEmoji(GrowthStage stage) {
     switch (stage) {
-      case GrowthStage.egg:
-        return '🥚';
-      case GrowthStage.juvenile:
-        return '🐟';
-      case GrowthStage.adult:
-        return '🐠';
+      case GrowthStage.egg: return '🥚';
+      case GrowthStage.juvenile: return '🐟';
+      case GrowthStage.adult: return '🐠';
     }
   }
 

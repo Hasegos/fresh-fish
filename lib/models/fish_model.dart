@@ -2,7 +2,10 @@
 enum FishType {
   goldfish,
   bluefish,
-  redfish;
+  redfish,
+  tropical,    // 추가
+  clownfish,   // 추가
+  dolphin;     // 추가
 
   String get displayName {
     switch (this) {
@@ -12,6 +15,12 @@ enum FishType {
         return '파랑이';
       case FishType.redfish:
         return '빨강이';
+      case FishType.tropical:
+        return '열대어';
+      case FishType.clownfish:
+        return '니모';
+      case FishType.dolphin:
+        return '돌고래';
     }
   }
 
@@ -23,6 +32,12 @@ enum FishType {
         return '🔵';
       case FishType.redfish:
         return '🔴';
+      case FishType.tropical:
+        return '🐠';
+      case FishType.clownfish:
+        return '🐡';
+      case FishType.dolphin:
+        return '🐬';
     }
   }
 
@@ -34,6 +49,29 @@ enum FishType {
         return '#4169E1';
       case FishType.redfish:
         return '#DC143C';
+      case FishType.tropical:
+        return '#FF6B9D';
+      case FishType.clownfish:
+        return '#FF8C00';
+      case FishType.dolphin:
+        return '#00CED1';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case FishType.goldfish:
+        return '행운과 부를 가져다주는\n황금빛 물고기';
+      case FishType.bluefish:
+        return '깊은 바다의 지혜를\n품은 물고기';
+      case FishType.redfish:
+        return '열정과 용기가 넘치는\n붉은 물고기';
+      case FishType.tropical:
+        return '화려한 색상의\n열대 물고기';
+      case FishType.clownfish:
+        return '귀엽고 사교적인\n니모 친구';
+      case FishType.dolphin:
+        return '영리하고 빠른\n바다의 천재';
     }
   }
 }

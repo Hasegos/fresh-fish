@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../achievements/achievements_screen.dart';
 
 /// 설정 화면
 class SettingsScreen extends StatelessWidget {
@@ -42,6 +43,19 @@ class SettingsScreen extends StatelessWidget {
                     _buildSection(
                       title: '일반',
                       children: [
+                        _buildSettingTile(
+                          context,
+                          icon: Icons.emoji_events,
+                          title: '업적',
+                          subtitle: '달성한 업적 보기',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const AchievementsScreen(),
+                              ),
+                            );
+                          },
+                        ),
                         _buildSettingTile(
                           context,
                           icon: Icons.notifications,

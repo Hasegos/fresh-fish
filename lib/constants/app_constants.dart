@@ -1,13 +1,3 @@
-/// Application constants
-library;
-
-/// App information
-class AppInfo {
-  static const String name = 'My Tiny Aquarium';
-  static const String version = '1.1.0';
-  static const String description = '심해 바다 컨셉의 생산성 앱';
-}
-
 /// Time constants (밀리초 단위)
 class TimeConstants {
   /// 총 성장 시간 (72시간)

@@ -32,6 +32,13 @@ class AppTextStyles {
     height: 1.4,
   );
   
+  static const TextStyle headingSmall = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: Color(0xFF2E3440),
+    height: 1.4,
+  );
+  
   // 본문 스타일
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,

@@ -1,72 +1,46 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/user_data_provider.dart';
-import '../../widgets/bottom_navigation.dart';
+// lib/models/quest_model.dart
 
-/// To Do 화면
-class TodosScreen extends StatelessWidget {
-  const TodosScreen({super.key});
+class ToDo {
+  final String id;
+  final String title;
+  final int goldReward;
+  final int expReward;
+  final bool completed;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0A1628),
-              Color(0xFF1B263B),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // 헤더
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        context.read<UserDataProvider>().backToMain();
-                      },
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '✅ To Do',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // 할 일 목록
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    'To Do 기능 준비 중',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0xFF778DA9),
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 80),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: const BottomNavigation(),
+  ToDo({
+    required this.id,
+    required this.title,
+    this.goldReward = 10,
+    this.expReward = 5,
+    this.completed = false,
+  });
+
+  // JSON 변환 및 복사를 위한 메서드 (필수)
+  factory ToDo.fromJson(Map<String, dynamic> json) {
+    return ToDo(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      goldReward: json['goldReward'] as int? ?? 10,
+      expReward: json['expReward'] as int? ?? 5,
+      completed: json['completed'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'goldReward': goldReward,
+    'expReward': expReward,
+    'completed': completed,
+  };
+
+  ToDo copyWith({bool? completed}) {
+    return ToDo(
+      id: id,
+      title: title,
+      goldReward: goldReward,
+      expReward: expReward,
+      completed: completed ?? this.completed,
     );
   }
 }

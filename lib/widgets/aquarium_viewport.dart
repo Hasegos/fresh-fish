@@ -3,6 +3,10 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../models/models.dart';
 import '../utils/growth_utils.dart';
+import '../utils/time_based_theme.dart';
+import 'pixel_fish.dart';
+import 'animated_fish.dart';
+import 'underwater_effects.dart';
 
 /// 수족관 뷰포트 위젯
 class AquariumViewport extends StatelessWidget {
@@ -20,115 +24,64 @@ class AquariumViewport extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stage = GrowthUtils.getGrowthStage(fish);
+    final theme = getAquariumTheme();
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1A3A52),
-            Color(0xFF0D1B2A),
-          ],
-        ),
+        gradient: theme.gradient,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: AppColors.primary.withOpacity(0.3),
           width: 2,
         ),
       ),
-      child: Stack(
-        children: [
-          // 배경 효과 (물결)
-          _buildWaterEffect(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // 수중 효과 (변환된 위젯 사용)
+            UnderwaterEffects(theme: theme),
 
-          // 장식들
-          ..._buildDecorations(),
+            // 장식들
+            ..._buildDecorations(context),
 
-          // 물고기
-          Center(
-            child: _buildFish(stage),
-          ),
+            // 애니메이션 물고기 (변환된 위젯 사용)
+            AnimatedFish(
+              fishType: fish.type,
+              level: fish.level,
+              scale: 1.0,
+              waterQuality: waterQuality,
+              eggHatchedAt: fish.eggHatchedAt,
+            ),
 
-          // 물고기 정보 오버레이
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: _buildFishInfo(stage),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWaterEffect() {
-    return Positioned.fill(
-      child: Opacity(
-        opacity: 0.1,
-        child: CustomPaint(
-          painter: WaterEffectPainter(),
+            // 물고기 정보 오버레이
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: _buildFishInfo(stage),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  List<Widget> _buildDecorations() {
+  List<Widget> _buildDecorations(BuildContext context) {
+    if (decorations.isEmpty) return [];
+
+    final screenSize = MediaQuery.of(context).size;
     return decorations.map((decoration) {
+      // x, y는 퍼센트 값이므로 화면 크기에 맞게 변환 필요
       return Positioned(
-        left: decoration.x,
-        top: decoration.y,
+        left: decoration.x * 0.01 * screenSize.width,
+        top: decoration.y * 0.01 * screenSize.height,
         child: const Text(
           '🪸', // 장식 이모지 (실제로는 decorationId로 조회)
           style: TextStyle(fontSize: 32),
         ),
       );
     }).toList();
-  }
-
-  Widget _buildFish(GrowthStage stage) {
-    final emoji = GrowthUtils.getGrowthStageEmoji(stage);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 물고기 애니메이션
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(seconds: 2),
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, -10 * (1 - value)),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
-            );
-          },
-          child: Text(
-            emoji,
-            style: const TextStyle(fontSize: 120),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 물고기 이름
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '레벨 ${fish.level}',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildFishInfo(GrowthStage stage) {
@@ -216,30 +169,3 @@ class AquariumViewport extends StatelessWidget {
   }
 }
 
-/// 물결 효과 페인터
-class WaterEffectPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.primary.withOpacity(0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    final path = Path();
-    
-    for (int i = 0; i < 3; i++) {
-      path.reset();
-      path.moveTo(0, size.height * 0.3 + i * 50);
-      
-      for (double x = 0; x <= size.width; x += 20) {
-        final y = size.height * 0.3 + i * 50 + 10 * (x / 100).sin();
-        path.lineTo(x, y);
-      }
-      
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

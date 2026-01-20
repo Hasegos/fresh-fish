@@ -1,116 +1,87 @@
-import 'package:flutter/foundation.dart' hide Category;
+import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../services/storage_service.dart';
 
 /// 사용자 데이터 상태 관리 Provider
+/// [Why] 앱 전체에서 유저 정보(골드, 물고기 상태 등)를 공유하기 위해 사용합니다.
 class UserDataProvider extends ChangeNotifier {
   UserData? _userData;
   bool _isLoading = true;
-  
-  /// 온보딩 단계
-  OnboardingStep _onboardingStep = OnboardingStep.guide;
-  
-  /// 선택된 카테고리들
-  List<Category> _selectedCategories = [];
-  
-  /// 현재 페이지
-  AppPage _currentPage = AppPage.main;
+
+  // StorageService 인스턴스 생성
+  final StorageService _storageService = StorageService();
 
   // Getters
   UserData? get userData => _userData;
   bool get isLoading => _isLoading;
-  OnboardingStep get onboardingStep => _onboardingStep;
-  List<Category> get selectedCategories => _selectedCategories;
-  AppPage get currentPage => _currentPage;
-  
-  /// 온보딩 완료 여부
   bool get isOnboardingComplete => _userData?.onboardingCompleted ?? false;
 
-  UserDataProvider() {
-    _loadUserData();
-  }
-
-  /// 사용자 데이터 로드
-  Future<void> _loadUserData() async {
+  /// 초기화
+  /// [How] 앱 시작 시 저장된 데이터를 불러옵니다.
+  Future<void> initialize() async {
     _isLoading = true;
-    notifyListeners();
-    
+    notifyListeners(); // 로딩 시작 알림
+
+    print("🚀 [Provider LOG 1] 데이터 로딩 시작...");
     try {
-      await storageService.init();
-      final data = await storageService.getUserData();
-      
-      if (data != null && data.onboardingCompleted) {
-        _userData = data;
-        _onboardingStep = OnboardingStep.complete;
-      }
+      _userData = await _storageService.getUserData();
+      print("🚀 [Provider LOG 2] 데이터 로딩 성공: ${_userData != null}");
     } catch (e) {
-      debugPrint('사용자 데이터 로드 실패: $e');
+      print("❌ [Provider ERROR] 로딩 중 에러 발생: $e");
+      debugPrint('Error loading user data: $e');
     }
-    
+
     _isLoading = false;
-    notifyListeners();
+    notifyListeners(); // 로딩 종료 알림
+    print("🚀 [Provider LOG 3] 초기화 프로세스 종료");
   }
 
   /// 사용자 데이터 새로고침
   Future<void> refreshUserData() async {
-    await _loadUserData();
+    try {
+      _userData = await _storageService.getUserData();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error refreshing user data: $e');
+    }
   }
 
-  /// 온보딩 완료
-  void completeOnboarding() {
-    _onboardingStep = OnboardingStep.categorySelection;
-    notifyListeners();
-  }
-
-  /// 카테고리 선택
-  void selectCategories(List<Category> categories) {
-    _selectedCategories = categories;
-    _onboardingStep = OnboardingStep.eggSelection;
-    notifyListeners();
-  }
-
-  /// 알 선택 및 초기 사용자 생성
-  Future<void> selectEgg(FishType fishType) async {
-    final newUser = await storageService.createInitialUser(
-      fishType,
-      _selectedCategories,
-    );
-    await storageService.saveUserData(newUser);
-    _userData = newUser;
-    _onboardingStep = OnboardingStep.complete;
-    notifyListeners();
-  }
-
-  /// 사용자 데이터 업데이트
-  Future<void> updateUserData(UserData data) async {
+  /// 사용자 데이터 저장
+  Future<void> saveUserData(UserData data) async {
     _userData = data;
-    await storageService.saveUserData(data);
     notifyListeners();
+    await _storageService.saveUserData(data);
   }
 
-  /// 페이지 이동
-  void navigateTo(AppPage page) {
-    _currentPage = page;
-    notifyListeners();
+  /// 사용자 데이터 업데이트 (함수형 업데이트)
+  Future<void> updateUserData(UserData Function(UserData) updater) async {
+    if (_userData != null) {
+      _userData = updater(_userData!);
+      notifyListeners();
+      await _storageService.saveUserData(_userData!);
+    }
   }
 
-  /// 메인으로 돌아가기
-  Future<void> backToMain() async {
-    _currentPage = AppPage.main;
-    await refreshUserData();
+  /// 특정 항목 업데이트 메서드들
+  Future<void> updateFish(Fish fish) async {
+    if (_userData != null) {
+      await updateUserData((data) => data.copyWith(fish: fish));
+    }
   }
 
-  /// 앱 초기화 (디버그용)
-  Future<void> resetApp() async {
-    _userData = null;
-    _onboardingStep = OnboardingStep.guide;
-    _selectedCategories = [];
-    _currentPage = AppPage.main;
-    // 저장소 초기화는 storage_service에서 처리
-    notifyListeners();
+  Future<void> updateGold(int gold) async {
+    if (_userData != null) {
+      await updateUserData((data) => data.copyWith(gold: gold));
+    }
   }
 
-  /// 퀘스트 완료 처리
+  Future<void> addGold(int amount) async {
+    if (_userData != null) {
+      await updateGold(_userData!.gold + amount);
+    }
+  }
+
+  /// 퀘스트 완료 로직
   Future<void> completeQuest(String questId, int expGain, int goldGain) async {
     if (_userData == null) return;
 
@@ -135,73 +106,50 @@ class UserDataProvider extends ChangeNotifier {
       hp: (_userData!.fish.hp + 5).clamp(0, 100),
     );
 
-    final updatedData = _userData!.copyWith(
+    await updateUserData((data) => data.copyWith(
       fish: updatedFish,
-      gold: _userData!.gold + goldGain,
+      gold: data.gold + goldGain,
       quests: updatedQuests,
-      waterQuality: (_userData!.waterQuality + 3).clamp(0, 100),
-    );
-
-    await updateUserData(updatedData);
+      waterQuality: (data.waterQuality + 3).clamp(0, 100),
+    ));
   }
 
-  /// 습관 완료
-  Future<void> completeHabit(String habitId) async {
-    if (_userData == null) return;
+  // 👇 [새로 추가된 메서드 1: 장식 구매]
+  /// [Why] 상점에서 아이템을 구매할 때 골드를 차감하고 소유 목록에 추가하기 위해 필요합니다.
+  /// [How] 골드가 충분한지 확인한 후, copyWith를 통해 기존 데이터를 업데이트합니다.
+  Future<bool> purchaseDecoration(String decorationId, int price) async {
+    if (_userData == null) return false;
 
-    final updatedHabits = _userData!.habits.map((h) {
-      if (h.id == habitId) {
-        return h.copyWith(
-          completionCount: h.completionCount + 1,
-          totalCompletions: h.totalCompletions + 1,
-          lastCompletedAt: DateTime.now().millisecondsSinceEpoch,
-          comboCount: (h.comboCount ?? 0) + 1,
-        );
-      }
-      return h;
-    }).toList();
+    // 1. 골드 부족 여부 체크
+    if (_userData!.gold < price) {
+      print("❌ 골드가 부족하여 구매할 수 없습니다.");
+      return false;
+    }
 
-    final habit = _userData!.habits.firstWhere((h) => h.id == habitId);
-    await completeQuest(habitId, habit.expReward, habit.goldReward);
+    // 2. 소유 목록 업데이트 및 골드 차감
+    final updatedOwned = [..._userData!.ownedDecorations, decorationId];
 
-    final updatedData = _userData!.copyWith(habits: updatedHabits);
-    await updateUserData(updatedData);
+    await updateUserData((data) => data.copyWith(
+      gold: data.gold - price,
+      ownedDecorations: updatedOwned,
+    ));
+
+    print("✅ 장식 구매 성공: $decorationId");
+    return true;
   }
 
-  /// ToDo 완료
-  Future<void> completeTodo(String todoId) async {
-    if (_userData == null) return;
-
-    final updatedTodos = _userData!.todos.map((t) {
-      if (t.id == todoId) {
-        return t.copyWith(completed: true);
-      }
-      return t;
-    }).toList();
-
-    final todo = _userData!.todos.firstWhere((t) => t.id == todoId);
-    await completeQuest(todoId, todo.expReward, todo.goldReward);
-
-    final updatedData = _userData!.copyWith(todos: updatedTodos);
-    await updateUserData(updatedData);
+  // 👇 [새로 추가된 메서드 2: 메인으로 이동]
+  /// [Why] 화면의 뒤로가기 버튼 등을 눌렀을 때 상태를 관리하거나 알림을 주기 위해 사용합니다.
+  void backToMain() {
+    // 현재는 알림(notifyListeners)만 주지만,
+    // 나중에 특정 페이지 인덱스를 0(메인)으로 바꾸는 로직 등을 여기에 넣을 수 있습니다.
+    notifyListeners();
   }
-}
 
-/// 온보딩 단계
-enum OnboardingStep {
-  guide,              // 가이드
-  categorySelection,  // 카테고리 선택
-  eggSelection,       // 알 선택
-  complete,           // 완료
-}
-
-/// 앱 페이지
-enum AppPage {
-  main,              // 메인 어항
-  dailies,           // 데일리 퀘스트
-  todos,             // 할 일
-  calendar,          // 캘린더
-  settings,          // 설정
-  decorationShop,    // 장식 상점
-  decorationManager, // 장식 관리
+  /// 데이터 초기화 (로그아웃 등)
+  Future<void> reset() async {
+    _userData = null;
+    notifyListeners();
+    await _storageService.clearUserData();
+  }
 }

@@ -1,4 +1,4 @@
-import '../models/achievement_model.dart';
+import '../models/user_data_model.dart';
 
 /// 모든 업적 목록
 List<Achievement> getInitialAchievements() {

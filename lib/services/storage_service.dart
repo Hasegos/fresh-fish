@@ -103,6 +103,7 @@ class StorageService {
       customRewards: [],
       decorations: [],
       ownedDecorations: [],
+      timerSessions: [],
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../aquarium/aquarium_screen.dart';
+import '../timer/timer_screen.dart';
 import '../quests/quests_screen.dart';
 import '../calendar/calendar_screen.dart';
 import '../settings/settings_screen.dart';
@@ -19,6 +20,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const AquariumScreen(),
+    const TimerScreen(),
     const QuestsScreen(),
     const CalendarScreen(),
     const SettingsScreen(),
@@ -52,16 +54,21 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 _buildNavItem(
                   index: 1,
+                  icon: Icons.timer,
+                  label: '타이머',
+                ),
+                _buildNavItem(
+                  index: 2,
                   icon: Icons.task_alt,
                   label: '퀘스트',
                 ),
                 _buildNavItem(
-                  index: 2,
+                  index: 3,
                   icon: Icons.calendar_month,
                   label: '캘린더',
                 ),
                 _buildNavItem(
-                  index: 3,
+                  index: 4,
                   icon: Icons.settings,
                   label: '설정',
                 ),
