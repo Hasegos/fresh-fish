@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/app_provider.dart';
 import '../aquarium/aquarium_screen.dart';
 import '../timer/timer_screen.dart';
 import '../quests/quests_screen.dart';

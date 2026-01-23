@@ -4,7 +4,6 @@ import '../theme/app_text_styles.dart';
 import '../models/models.dart';
 import '../utils/growth_utils.dart';
 import '../utils/time_based_theme.dart';
-import 'pixel_fish.dart';
 import 'animated_fish.dart';
 import 'underwater_effects.dart';
 

@@ -1,7 +1,5 @@
 import 'fish_model.dart';
 import 'quest_model.dart';
-import 'decoration_model.dart';
-import 'achievement_model.dart';
 import 'timer_model.dart';
 
 /// [PlacedDecoration]

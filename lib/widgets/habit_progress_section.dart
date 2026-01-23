@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 /// 습관 진행도 섹션 위젯

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/user_data_model.dart';
-import '../models/fish_model.dart';
-import '../models/quest_model.dart';
 import '../models/timer_model.dart';
 import '../services/storage_service.dart';
 

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
-import '../../models/quest_model.dart'; // [중요] Quest 타입을 위해 추가
-import '../../models/user_data_model.dart';
+import '../../models/quest_model.dart';
 
 /// [QuestsScreen]
 /// 사용자의 일일 퀘스트 목록을 보여주고 완료 처리 기능을 제공합니다.

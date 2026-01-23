@@ -50,7 +50,6 @@ class PixelFish extends StatelessWidget {
         return _buildSmallFish(colors, actualSize);
       case EvolutionStage.legendary:
         return _buildLegendaryFish(colors, actualSize, fishType);
-      case EvolutionStage.adult:
       default:
         return _buildAdultFish(colors, actualSize);
     }
