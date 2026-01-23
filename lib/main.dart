@@ -55,8 +55,11 @@ class FishQuestApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: Consumer<AppProvider>(
           builder: (context, appProvider, _) {
+            debugPrint('🔍 AppProvider 상태: isLoading=${appProvider.isLoading}, isOnboardingComplete=${appProvider.isOnboardingComplete}, userData=${appProvider.userData}');
+            
             // 로딩 중
             if (appProvider.isLoading) {
+              debugPrint('⏳ 로딩 화면 표시');
               return const Scaffold(
                 body: Center(
                   child: Column(
@@ -78,10 +81,12 @@ class FishQuestApp extends StatelessWidget {
 
             // 온보딩 미완료
             if (!appProvider.isOnboardingComplete) {
+              debugPrint('🔄 OnboardingFlow로 진입');
               return const OnboardingFlow();
             }
 
             // 온보딩 완료 -> 메인 화면
+            debugPrint('✅ MainScreen으로 진입');
             return const MainScreen();
           },
         ),

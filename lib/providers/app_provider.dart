@@ -15,6 +15,7 @@ class AppProvider extends ChangeNotifier {
 
   /// 초기화 및 데이터 로드
   Future<void> initialize() async {
+    debugPrint('🔄 AppProvider.initialize() 시작');
     _isLoading = true;
     notifyListeners();
     try {
@@ -26,12 +27,15 @@ class AppProvider extends ChangeNotifier {
           return null;
         },
       );
+      debugPrint('✅ AppProvider 데이터 로드 완료: $_userData');
     } catch (e) {
-      debugPrint('초기화 에러: $e');
+      debugPrint('❌ AppProvider 초기화 에러: $e');
       _userData = null;
     } finally {
       _isLoading = false;
+      debugPrint('✅ AppProvider._isLoading = false로 설정 (onboardingComplete: ${_userData?.onboardingCompleted ?? false})');
       notifyListeners();
+      debugPrint('📢 notifyListeners() 호출 완료');
     }
   }
 
