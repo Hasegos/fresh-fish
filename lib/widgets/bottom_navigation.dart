@@ -85,7 +85,7 @@ class BottomNavigation extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary.withOpacity(0.1)
+                      ? const Color(0xFF81E6D9).withOpacity(0.15)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -93,16 +93,20 @@ class BottomNavigation extends StatelessWidget {
                   icon,
                   size: 24,
                   color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
+                      ? const Color(0xFF81E6D9)
+                      : AppColors.textTertiary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: isSelected
-                    ? AppTextStyles.navLabelActive
-                    : AppTextStyles.navLabel,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? const Color(0xFF81E6D9)
+                      : AppColors.textTertiary,
+                ),
               ),
             ],
           ),
