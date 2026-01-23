@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../models/timer_model.dart';
-import '../../data/timer_categories.dart'; // [추가] 데이터 임포트
+import '../../data/timer_categories.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 
 /// [TimerScreen]
 /// 사용자가 특정 카테고리를 선택해 집중 시간을 측정하고 보상을 받는 화면입니다.
@@ -90,67 +92,58 @@ class _TimerScreenState extends State<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold( // Container 대신 Scaffold를 사용하여 배경과 구조를 잡습니다.
-      backgroundColor: Colors.transparent, // 외부 그라데이션 유지를 위해 투명 설정
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A3A52), Color(0xFF0D1B2A)],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const Text(
-                  '⏱️ Focus Timer',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _selectedCategory != null ? '집중 중: $_selectedCategory' : '카테고리를 선택하여 시작하세요',
-                  style: const TextStyle(fontSize: 16, color: Colors.white70),
-                ),
-                const SizedBox(height: 32),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Text(
+                '⏱️ Timer',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _selectedCategory != null ? '집중 중: $_selectedCategory' : '카테고리를 선택하여 시작하세요',
+                style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 32),
 
-                // 중앙 타이머 원형 디스플레이
-                _buildTimerDisplay(),
-                const SizedBox(height: 32),
+              // 중앙 타이머 원형 디스플레이
+              _buildTimerDisplay(),
+              const SizedBox(height: 32),
 
-                // 컨트롤 버튼 (카테고리 선택 시에만 노출)
-                if (_selectedCategory != null) _buildControlPanel(),
-                const SizedBox(height: 32),
+              // 컨트롤 버튼 (카테고리 선택 시에만 노출)
+              if (_selectedCategory != null) _buildControlPanel(),
+              const SizedBox(height: 32),
 
-                const Text('카테고리', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 16),
+              const Text('카테고리', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              const SizedBox(height: 16),
 
-                // 카테고리 그리드 목록
-                Expanded(
-                  child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.5,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: defaultTimerCategories.length,
-                    itemBuilder: (context, index) {
-                      final category = defaultTimerCategories[index];
-                      final isSelected = _selectedCategory == category.name;
-
-                      return _buildCategoryCard(
-                        category: category,
-                        isSelected: isSelected,
-                        onTap: _isRunning ? null : () => _startTimer(category.name),
-                      );
-                    },
+              // 카테고리 그리드 목록
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
                   ),
+                  itemCount: defaultTimerCategories.length,
+                  itemBuilder: (context, index) {
+                    final category = defaultTimerCategories[index];
+                    final isSelected = _selectedCategory == category.name;
+
+                    return _buildCategoryCard(
+                      category: category,
+                      isSelected: isSelected,
+                      onTap: _isRunning ? null : () => _startTimer(category.name),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -161,16 +154,16 @@ class _TimerScreenState extends State<TimerScreen> {
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A).withOpacity(0.5),
+        color: AppColors.primary.withOpacity(0.1),
         shape: BoxShape.circle,
         border: Border.all(
-          color: _isRunning ? const Color(0xFF4FC3F7) : Colors.white24,
+          color: _isRunning ? AppColors.primary : AppColors.textTertiary,
           width: 4,
         ),
       ),
       child: Text(
         _formatTime(_seconds),
-        style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+        style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontFamily: 'monospace'),
       ),
     );
   }
@@ -218,7 +211,7 @@ class _TimerScreenState extends State<TimerScreen> {
         backgroundColor: color,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );
   }
@@ -236,16 +229,26 @@ class _TimerScreenState extends State<TimerScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : const Color(0xFF1E2A3A),
+          color: isSelected ? color.withOpacity(0.15) : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? color : Colors.transparent, width: 2),
+          border: Border.all(
+            color: isSelected ? color : AppColors.textTertiary.withOpacity(0.3),
+            width: 2,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(category.icon, style: const TextStyle(fontSize: 32)),
             const SizedBox(height: 4),
-            Text(category.name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? color : Colors.white70)),
+            Text(
+              category.name,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? color : AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
       ),

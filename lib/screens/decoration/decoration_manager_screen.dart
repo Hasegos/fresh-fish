@@ -1,6 +1,8 @@
 // screens/decoration_manager_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../providers/user_data_provider.dart';
 import '../../widgets/bottom_navigation.dart';
 
@@ -11,64 +13,59 @@ class DecorationManagerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0A1628), Color(0xFF1B263B)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context), // 👈 정의된 함수 호출
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(context), // 👈 정의된 함수 호출
 
-              Expanded(
-                child: Consumer<UserDataProvider>(
-                  builder: (context, provider, child) {
-                    // [Why] 소유한 장식 아이템 ID 리스트를 가져옵니다.
-                    final ownedIds = provider.userData?.ownedDecorations ?? [];
+            Expanded(
+              child: Consumer<UserDataProvider>(
+                builder: (context, provider, child) {
+                  // [Why] 소유한 장식 아이템 ID 리스트를 가져옵니다.
+                  final ownedIds = provider.userData?.ownedDecorations ?? [];
 
-                    // [Simple Example] 아이템 정보 데이터베이스 (실제로는 별도 파일로 관리 권장)
-                    final allItems = [
-                      {'id': 'deco_01', 'name': '푸른 산호', 'icon': '🪸'},
-                      {'id': 'deco_02', 'name': '황금 보물상자', 'icon': '🏴‍☠️'},
-                      {'id': 'deco_03', 'name': '해초 숲', 'icon': '🌿'},
-                    ];
+                  // [Simple Example] 아이템 정보 데이터베이스 (실제로는 별도 파일로 관리 권장)
+                  final allItems = [
+                    {'id': 'deco_01', 'name': '푸른 산호', 'icon': '🪸'},
+                    {'id': 'deco_02', 'name': '황금 보물상자', 'icon': '🏴‍☠️'},
+                    {'id': 'deco_03', 'name': '해초 숲', 'icon': '🌿'},
+                  ];
 
-                    // [How] 내가 가진 아이템들만 필터링합니다.
-                    final myItems = allItems.where((item) => ownedIds.contains(item['id'])).toList();
+                  // [How] 내가 가진 아이템들만 필터링합니다.
+                  final myItems = allItems.where((item) => ownedIds.contains(item['id'])).toList();
 
-                    if (myItems.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          '보유 중인 장식이 없습니다.\n상점에서 장식을 구매해 보세요!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Color(0xFF778DA9), fontSize: 16),
+                  if (myItems.isEmpty) {
+                    return Center(
+                      child: Text(
+                        '보유 중인 장식이 없습니다.\n상점에서 장식을 구매해 보세요!',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
                         ),
-                      );
-                    }
-
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.85,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
                       ),
-                      itemCount: myItems.length,
-                      itemBuilder: (context, index) {
-                        return _buildOwnedItemCard(context, myItems[index]);
-                      },
                     );
-                  },
-                ),
+                  }
+
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: myItems.length,
+                    itemBuilder: (context, index) {
+                      return _buildOwnedItemCard(context, myItems[index]);
+                    },
+                  );
+                },
               ),
-              const SizedBox(height: 80),
-            ],
-          ),
+            ),
+            const SizedBox(height: 80),
+          ],
         ),
       ),
       // [Critical Fix] BottomNavigation에 필수 파라미터를 전달합니다.
@@ -92,7 +89,7 @@ class DecorationManagerScreen extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () => context.read<UserDataProvider>().backToMain(),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           ),
           const SizedBox(width: 8),
           const Text(
@@ -100,7 +97,7 @@ class DecorationManagerScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -112,9 +109,11 @@ class DecorationManagerScreen extends StatelessWidget {
   Widget _buildOwnedItemCard(BuildContext context, Map<String, dynamic> item) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF4FC3F7).withOpacity(0.5)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.primaryPastel.withOpacity(0.3),
+        ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -123,20 +122,26 @@ class DecorationManagerScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             item['name'] as String,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: () {
               // [How] 아이템을 수족관에 적용하는 로직 (예시)
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${item['name']} 장착 완료!')),
+                SnackBar(
+                  content: Text('${item['name']} 장착 완료!'),
+                  backgroundColor: AppColors.statusSuccess,
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4FC3F7),
+              backgroundColor: AppColors.primaryPastel,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('장착하기'),
           ),

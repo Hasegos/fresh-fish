@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../models/fish_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/storage_service.dart';
@@ -68,7 +70,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('물고기를 선택해주세요'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.highlightPink,
         ),
       );
       return;
@@ -98,7 +100,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.highlightPink,
         ),
       );
     } finally {
@@ -114,106 +116,95 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     final availableFishTypes = _fishData.keys.toList();
 
     return Scaffold(
-      body: Container( // [주의] Container는 const를 사용하지 않습니다.
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A3A52),
-              Color(0xFF0D1B2A),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
 
-                // 제목 이콘
-                const Text(
-                  '🥚',
-                  style: TextStyle(fontSize: 80),
+              // 제목 이콘
+              const Text(
+                '🥚',
+                style: TextStyle(fontSize: 80),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                '물고기 알 선택',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  '물고기 알 선택',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '키우고 싶은 물고기를 선택하세요\n함께 퀘스트를 하며 성장합니다',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  '키우고 싶은 물고기를 선택하세요\n함께 퀘스트를 하며 성장합니다',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
 
-                // 물고기 카드 목록
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: availableFishTypes.length,
-                    itemBuilder: (context, index) {
-                      final fishType = availableFishTypes[index];
-                      final data = _fishData[fishType]!;
-                      final isSelected = _selectedFish == fishType;
+              // 물고기 카드 목록
+              Expanded(
+                child: ListView.builder(
+                  itemCount: availableFishTypes.length,
+                  itemBuilder: (context, index) {
+                    final fishType = availableFishTypes[index];
+                    final data = _fishData[fishType]!;
+                    final isSelected = _selectedFish == fishType;
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: _buildFishCard(
-                          fishType: fishType,
-                          name: data['name'] as String,
-                          emoji: data['emoji'] as String,
-                          color: data['color'] as Color,
-                          description: data['description'] as String,
-                          isSelected: isSelected,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // 시작 버튼 영역
-                if (_isCreating)
-                  const CircularProgressIndicator(
-                    color: Color(0xFF4FC3F7),
-                  )
-                else
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _createUser,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4FC3F7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _buildFishCard(
+                        fishType: fishType,
+                        name: data['name'] as String,
+                        emoji: data['emoji'] as String,
+                        color: data['color'] as Color,
+                        description: data['description'] as String,
+                        isSelected: isSelected,
                       ),
-                      child: const Text(
-                        '시작하기',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 시작 버튼 영역
+              if (_isCreating)
+                const CircularProgressIndicator(
+                  color: AppColors.primaryPastel,
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _createUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPastel,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text(
+                      '시작하기',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -248,6 +239,15 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
         ),
         child: Row(
           children: [
+            // 물고기 이모지 ? color.withOpacity(0.12) : AppColors.surface,
+          border: Border.all(
+            color: isSelected ? color : AppColors.borderLight,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
             // 물고기 이모지
             Text(
               emoji,
@@ -265,7 +265,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? color : Colors.white,
+                      color: isSelected ? color : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -273,18 +273,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
                     description,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.white70,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // 선택된 경우 체크 아이콘 표시
-            if (isSelected)
-              Icon(
-                Icons.check_circle,
+                      color: AppColors.textSecondary
                 color: color,
                 size: 32,
               ),

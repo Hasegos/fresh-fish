@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../theme/app_decorations.dart';
 import '../../providers/user_data_provider.dart';
 import '../../widgets/common/cards.dart';
 import '../../models/models.dart';
@@ -12,11 +13,9 @@ class DailiesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.backgroundGradient,
-      ),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: Consumer<UserDataProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading) {
@@ -80,13 +79,13 @@ class DailiesScreen extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                 onPressed: () => Navigator.of(context).pop(),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
                   '데일리 퀘스트',
-                  style: AppTextStyles.h2,
+                  style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -94,8 +93,9 @@ class DailiesScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          CommonCard(
+          Container(
             padding: const EdgeInsets.all(20),
+            decoration: AppDecorations.card(),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -103,19 +103,19 @@ class DailiesScreen extends StatelessWidget {
                   icon: Icons.assignment,
                   label: '전체',
                   value: '$total',
-                  color: AppColors.primary,
+                  color: AppColors.primaryPastel,
                 ),
                 _buildStatChip(
                   icon: Icons.check_circle,
                   label: '완료',
                   value: '$completed',
-                  color: AppColors.success,
+                  color: AppColors.statusSuccess,
                 ),
                 _buildStatChip(
                   icon: Icons.pending,
                   label: '남음',
                   value: '${total - completed}',
-                  color: AppColors.warning,
+                  color: AppColors.accentPastel,
                 ),
               ],
             ),
@@ -134,7 +134,10 @@ class DailiesScreen extends StatelessWidget {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
-        const SizedBox(height: 8),
+        const
+          label,
+          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+        
         Text(label, style: AppTextStyles.caption),
         const SizedBox(height: 4),
         Text(value, style: AppTextStyles.h3.copyWith(color: color)),
@@ -145,20 +148,25 @@ class DailiesScreen extends StatelessWidget {
   Widget _buildQuestCard(
     BuildContext context,
     Quest quest,
-    UserDataProvider provider,
-  ) {
-    final difficultyColor = {
-      Difficulty.easy: AppColors.easyColor,
-      Difficulty.normal: AppColors.normalColor,
-      Difficulty.hard: AppColors.hardColor,
+    UserDataProvider provider,statusSuccess,
+      Difficulty.normal: AppColors.primaryPastel,
+      Difficulty.hard: AppColors.highlightPink,
     };
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: CommonCard(
-        backgroundColor: quest.completed
-            ? AppColors.success.withOpacity(0.1)
-            : AppColors.surface,
+      child: Container(
+        decoration: BoxDecoration(
+          color: quest.completed
+              ? AppColors.statusSuccess.withOpacity(0.08)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: quest.completed
+                ? AppColors.statusSuccess.withOpacity(0.2)
+                : AppColors.borderLight,
+          ),
+        ),
         child: Row(
           children: [
             // 체크박스
@@ -167,7 +175,7 @@ class DailiesScreen extends StatelessWidget {
               onChanged: quest.completed
                   ? null
                   : (_) => _completeQuest(context, quest, provider),
-              activeColor: AppColors.success,
+              activeColor: AppColors.statusSuccess,
             ),
 
             // 퀘스트 정보
@@ -178,6 +186,9 @@ class DailiesScreen extends StatelessWidget {
                   Text(
                     quest.title,
                     style: AppTextStyles.bodyLarge.copyWith(
+                      color: quest.completed
+                          ? AppColors.textTertiary
+                          : AppColors.textPrimary,
                       decoration: quest.completed
                           ? TextDecoration.lineThrough
                           : null,
@@ -193,13 +204,15 @@ class DailiesScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: (AppColors.categoryColors[quest.category] ?? AppColors.primary)
-                              .withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
+                          color: (AppColors.categoryColors[quest.category] ?? AppColors.primaryPastel)
+                              .withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           quest.category,
-                          style: AppTextStyles.caption,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.categoryColors[quest.category] ?? AppColors.primaryPastel,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -211,13 +224,14 @@ class DailiesScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: difficultyColor[quest.difficulty]!.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
+                          color: difficultyColor[quest.difficulty]!.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           _getDifficultyText(quest.difficulty),
                           style: AppTextStyles.caption.copyWith(
                             color: difficultyColor[quest.difficulty],
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -226,23 +240,30 @@ class DailiesScreen extends StatelessWidget {
                       // 보상
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.star,
                             size: 14,
-                            color: AppColors.warning,
+                            color: AppColors.accentPastel,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '+${quest.expReward}',
-                            style: AppTextStyles.caption,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(
+                          Icon(
                             Icons.monetization_on,
                             size: 14,
-                            color: AppColors.accent,
+                            color: AppColors.highlightPink,
                           ),
                           const SizedBox(width: 4),
+                          Text(
+                            '+${quest.goldReward}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            )
                           Text(
                             '+${quest.goldReward}',
                             style: AppTextStyles.caption,

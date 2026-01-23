@@ -1,6 +1,8 @@
 // screens/decoration_shop_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../providers/user_data_provider.dart';
 import '../../widgets/bottom_navigation.dart';
 
@@ -10,49 +12,41 @@ class DecorationShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0A1628), Color(0xFF1B263B)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context), // 👈 정의된 함수 호출
-              Expanded(
-                child: Consumer<UserDataProvider>(
-                  builder: (context, provider, child) {
-                    final items = [
-                      {'id': 'deco_01', 'name': '푸른 산호', 'price': 100, 'icon': '🪸'},
-                      {'id': 'deco_02', 'name': '황금 보물상자', 'price': 500, 'icon': '🏴‍☠️'},
-                      {'id': 'deco_03', 'name': '해초 숲', 'price': 50, 'icon': '🌿'},
-                    ];
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(context), // 👈 정의된 함수 호출
+            Expanded(
+              child: Consumer<UserDataProvider>(
+                builder: (context, provider, child) {
+                  final items = [
+                    {'id': 'deco_01', 'name': '푸른 산호', 'price': 100, 'icon': '🪸'},
+                    {'id': 'deco_02', 'name': '황금 보물상자', 'price': 500, 'icon': '🏴‍☠️'},
+                    {'id': 'deco_03', 'name': '해초 숲', 'price': 50, 'icon': '🌿'},
+                  ];
 
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        final bool isOwned = provider.userData?.ownedDecorations.contains(item['id']) ?? false;
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final bool isOwned = provider.userData?.ownedDecorations.contains(item['id']) ?? false;
 
-                        return _buildShopItemCard(context, item, isOwned); // 👈 정의된 함수 호출
-                      },
-                    );
-                  },
-                ),
+                      return _buildShopItemCard(context, item, isOwned); // 👈 정의된 함수 호출
+                    },
+                  );
+                },
               ),
-              const SizedBox(height: 80),
-            ],
-          ),
+            ),
+            const SizedBox(height: 80),
+          ],
         ),
       ),
       bottomNavigationBar: BottomNavigation(
@@ -74,7 +68,7 @@ class DecorationShopScreen extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () => context.read<UserDataProvider>().backToMain(),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           ),
           const SizedBox(width: 8),
           const Text(
@@ -82,7 +76,7 @@ class DecorationShopScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.textPrimary,
             ),
           ),
           const Spacer(),
@@ -91,7 +85,7 @@ class DecorationShopScreen extends StatelessWidget {
             builder: (context, provider, child) => Text(
               '💰 ${provider.userData?.gold ?? 0}G',
               style: const TextStyle(
-                color: Color(0xFFFFD700),
+                color: AppColors.highlightPink,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -106,9 +100,11 @@ class DecorationShopScreen extends StatelessWidget {
   Widget _buildShopItemCard(BuildContext context, Map<String, dynamic> item, bool isOwned) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white24),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isOwned ? AppColors.borderLight : AppColors.primaryPastel.withOpacity(0.3),
+        ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -117,12 +113,15 @@ class DecorationShopScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             item['name'] as String,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             '${item['price']} G',
-            style: const TextStyle(color: Color(0xFFFFD700)),
+            style: const TextStyle(color: AppColors.highlightPink),
           ),
           const SizedBox(height: 12),
           ElevatedButton(
@@ -137,17 +136,24 @@ class DecorationShopScreen extends StatelessWidget {
 
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${item['name']} 구매 완료!')),
+                  SnackBar(
+                    content: Text('${item['name']} 구매 완료!'),
+                    backgroundColor: AppColors.statusSuccess,
+                  ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('골드가 부족합니다.')),
+                  const SnackBar(
+                    content: Text('골드가 부족합니다.'),
+                    backgroundColor: AppColors.highlightPink,
+                  ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isOwned ? Colors.grey : Colors.blue,
+              backgroundColor: isOwned ? AppColors.textTertiary : AppColors.primaryPastel,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(isOwned ? '보유중' : '구매하기'),
           ),

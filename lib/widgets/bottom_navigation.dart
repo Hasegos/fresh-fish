@@ -34,23 +34,28 @@ class BottomNavigation extends StatelessWidget {
             children: [
               _buildNavItem(
                 index: 0,
-                icon: Icons.water_drop,
-                label: '수족관',
+                icon: Icons.home,
+                label: 'Home',
               ),
               _buildNavItem(
                 index: 1,
                 icon: Icons.task_alt,
-                label: '퀘스트',
+                label: 'ToDos',
               ),
               _buildNavItem(
                 index: 2,
-                icon: Icons.calendar_month,
-                label: '캘린더',
+                icon: Icons.schedule,
+                label: 'Timer',
               ),
               _buildNavItem(
                 index: 3,
-                icon: Icons.settings,
-                label: '설정',
+                icon: Icons.calendar_month,
+                label: 'Calendar',
+              ),
+              _buildNavItem(
+                index: 4,
+                icon: Icons.menu,
+                label: 'Menu',
               ),
             ],
           ),
@@ -145,23 +150,28 @@ class CustomBottomNavigation extends StatelessWidget {
           children: [
             _buildFloatingNavItem(
               index: 0,
-              icon: Icons.water_drop,
-              label: '수족관',
+              icon: Icons.home,
+              label: 'Home',
             ),
             _buildFloatingNavItem(
               index: 1,
               icon: Icons.task_alt,
-              label: '퀘스트',
+              label: 'ToDos',
             ),
             _buildFloatingNavItem(
               index: 2,
-              icon: Icons.calendar_month,
-              label: '캘린더',
+              icon: Icons.schedule,
+              label: 'Timer',
             ),
             _buildFloatingNavItem(
               index: 3,
-              icon: Icons.settings,
-              label: '설정',
+              icon: Icons.calendar_month,
+              label: 'Calendar',
+            ),
+            _buildFloatingNavItem(
+              index: 4,
+              icon: Icons.menu,
+              label: 'Menu',
             ),
           ],
         ),

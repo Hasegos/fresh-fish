@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 /// 카테고리 선택 화면
 class CategorySelectionScreen extends StatefulWidget {
@@ -26,101 +27,90 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A3A52),
-              Color(0xFF0D1B2A),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+
+              // 제목
+              const Text(
+                '관심 카테고리 선택',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '최소 1개 이상 선택해주세요',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // 카테고리 목록
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    final category = _categories[index];
+                    final isSelected = _selectedCategories.contains(category['name']);
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _buildCategoryCard(
+                        name: category['name']!,
+                        icon: category['icon']!,
+                        description: category['description']!,
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            if (isSelected) {
+                              _selectedCategories.remove(category['name']);
+                            } else {
+                              _selectedCategories.add(category['name']!);
+                            }
+                          });
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // 다음 버튼
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _selectedCategories.isEmpty
+                      ? null
+                      : () => widget.onComplete(_selectedCategories),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryPastel,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.textTertiary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    '다음 (${_selectedCategories.length}개 선택)',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                
-                // 제목
-                const Text(
-                  '관심 카테고리 선택',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '최소 1개 이상 선택해주세요',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                
-                // 카테고리 목록
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _categories.length,
-                    itemBuilder: (context, index) {
-                      final category = _categories[index];
-                      final isSelected = _selectedCategories.contains(category['name']);
-                      
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: _buildCategoryCard(
-                          name: category['name']!,
-                          icon: category['icon']!,
-                          description: category['description']!,
-                          isSelected: isSelected,
-                          onTap: () {
-                            setState(() {
-                              if (isSelected) {
-                                _selectedCategories.remove(category['name']);
-                              } else {
-                                _selectedCategories.add(category['name']!);
-                              }
-                            });
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                
-                // 다음 버튼
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _selectedCategories.isEmpty
-                        ? null
-                        : () => widget.onComplete(_selectedCategories),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4FC3F7),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(
-                      '다음 (${_selectedCategories.length}개 선택)',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -141,15 +131,15 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF4FC3F7).withOpacity(0.2)
-              : const Color(0xFF1E2A3A),
+              ? AppColors.primaryPastel.withOpacity(0.12)
+              : AppColors.surface,
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF4FC3F7)
-                : Colors.transparent,
+                ? AppColors.primaryPastel
+                : AppColors.borderLight,
             width: 2,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
@@ -159,7 +149,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
               style: const TextStyle(fontSize: 40),
             ),
             const SizedBox(width: 20),
-            
+
             // 정보
             Expanded(
               child: Column(
@@ -170,7 +160,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -178,21 +168,21 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                     description,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.white70,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // 선택 표시
             Icon(
               isSelected
                   ? Icons.check_circle
                   : Icons.circle_outlined,
               color: isSelected
-                  ? const Color(0xFF4FC3F7)
-                  : Colors.white30,
+                  ? AppColors.primaryPastel
+                  : AppColors.textTertiary,
               size: 28,
             ),
           ],

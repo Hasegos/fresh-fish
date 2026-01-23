@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../providers/app_provider.dart';
 import '../../models/quest_model.dart';
 
@@ -10,21 +12,18 @@ class QuestsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1A3A52), Color(0xFF0D1B2A)],
-        ),
-      ),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: Consumer<AppProvider>(
           builder: (context, provider, child) {
             final userData = provider.userData;
             if (userData == null) {
-              return const Center(
-                child: Text('데이터를 불러올 수 없습니다', style: TextStyle(color: Colors.white70)),
+              return Center(
+                child: Text(
+                  '데이터를 불러올 수 없습니다',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               );
             }
 
@@ -45,37 +44,51 @@ class QuestsScreen extends StatelessWidget {
                 children: [
                   const Text(
                     '오늘의 퀘스트',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '${completedQuests.length}/${todayQuests.length + completedQuests.length} 완료됨',
-                    style: const TextStyle(fontSize: 16, color: Colors.white70),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
                   Expanded(
                     child: (todayQuests.isEmpty && completedQuests.isEmpty)
-                        ? const Center(
-                      child: Text('오늘 등록된 퀘스트가 없습니다.', style: TextStyle(color: Colors.white38)),
-                    )
+                        ? Center(
+                          child: Text(
+                            '오늘 등록된 퀘스트가 없습니다.',
+                            style: const TextStyle(color: AppColors.textTertiary),
+                          ),
+                        )
                         : ListView(
-                      children: [
-                        ...todayQuests.map((quest) => _buildQuestCard(context, quest, provider)),
-                        if (completedQuests.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20.0),
-                            child: Divider(color: Colors.white10),
-                          ),
-                          const Text(
-                            '✅ 완료됨',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.greenAccent),
-                          ),
-                          const SizedBox(height: 12),
-                          ...completedQuests.map((quest) => _buildQuestCard(context, quest, provider, isCompleted: true)),
-                        ],
-                      ],
-                    ),
+                          children: [
+                            ...todayQuests.map((quest) => _buildQuestCard(context, quest, provider)),
+                            if (completedQuests.isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                                child: Divider(color: AppColors.borderLight),
+                              ),
+                              const Text(
+                                '✅ 완료됨',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.statusSuccess,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ...completedQuests.map((quest) => _buildQuestCard(context, quest, provider, isCompleted: true)),
+                            ],
+                          ],
+                        ),
                   ),
                 ],
               ),
@@ -97,9 +110,11 @@ class QuestsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isCompleted ? Colors.green.withOpacity(0.05) : const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isCompleted ? Colors.green.withOpacity(0.2) : Colors.white.withOpacity(0.05)),
+        color: isCompleted ? AppColors.statusSuccess.withOpacity(0.08) : AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isCompleted ? AppColors.statusSuccess.withOpacity(0.2) : AppColors.borderLight,
+        ),
       ),
       child: Row(
         children: [
@@ -108,14 +123,17 @@ class QuestsScreen extends StatelessWidget {
             child: Checkbox(
               value: isCompleted,
               onChanged: isCompleted ? null : (_) async {
-                await provider.completeQuest(quest.id); //
+                await provider.completeQuest(quest.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${quest.title} 완료! 🐟'), backgroundColor: Colors.blueAccent),
+                    SnackBar(
+                      content: Text('${quest.title} 완료! 🐟'),
+                      backgroundColor: AppColors.statusSuccess,
+                    ),
                   );
                 }
               },
-              activeColor: Colors.green,
+              activeColor: AppColors.statusSuccess,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
           ),
@@ -128,21 +146,21 @@ class QuestsScreen extends StatelessWidget {
                   quest.title,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     decoration: isCompleted ? TextDecoration.lineThrough : null,
-                    color: isCompleted ? Colors.white38 : Colors.white,
+                    color: isCompleted ? AppColors.textTertiary : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _buildTag(quest.category, const Color(0xFF4FC3F7)),
+                    _buildTag(quest.category, AppColors.secondaryPastel),
                     const SizedBox(width: 8),
                     _buildTag(quest.difficulty.displayName, _getDifficultyColor(quest.difficulty)),
                     const Spacer(),
-                    _buildRewardInfo(Icons.star, '+${quest.expReward}', Colors.amber),
+                    _buildRewardInfo(Icons.star, '+${quest.expReward}', AppColors.accentPastel),
                     const SizedBox(width: 8),
-                    _buildRewardInfo(Icons.monetization_on, '+${quest.goldReward}', const Color(0xFFFFD700)),
+                    _buildRewardInfo(Icons.monetization_on, '+${quest.goldReward}', AppColors.highlightPink),
                   ],
                 ),
               ],
@@ -152,12 +170,17 @@ class QuestsScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildTag(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -166,13 +189,28 @@ class QuestsScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 2),
-        Text(value, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
       ],
     );
   }
 
   /// [타입 수정] difficulty 인자에 'Difficulty' 타입을 지정했습니다.
   Color _getDifficultyColor(Difficulty difficulty) {
+    switch (difficulty.name) {
+      case 'easy':
+        return AppColors.statusSuccess;
+      case 'normal':
+        return AppColors.primaryPastel;
+      case 'hard':
+        return AppColors.highlightPink;
+      default:
+        return AppColors.textTertiariculty difficulty) {
     switch (difficulty.name) {
       case 'easy': return Colors.green;
       case 'normal': return Colors.blue;

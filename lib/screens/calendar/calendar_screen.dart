@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 
 /// 캘린더 화면 (활동 기록)
 class CalendarScreen extends StatelessWidget {
@@ -8,23 +10,16 @@ class CalendarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1A3A52), Color(0xFF0D1B2A)],
-        ),
-      ),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: Consumer<AppProvider>(
           builder: (context, provider, child) {
             final userData = provider.userData;
             if (userData == null) {
-              return const Center(child: Text('데이터 없음', style: TextStyle(color: Colors.white)));
+              return const Center(child: Text('데이터 없음', style: TextStyle(color: AppColors.textPrimary)));
             }
 
-            // [How] history 리스트를 가져옵니다.
             final List history = userData.history;
 
             return Padding(
@@ -32,32 +27,31 @@ class CalendarScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('활동 기록', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text('Calendar', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 8),
-                  Text('${history.length}일 기록됨', style: const TextStyle(fontSize: 16, color: Colors.white70)),
+                  Text('${history.length}일 기록됨', style: const TextStyle(fontSize: 16, color: AppColors.textSecondary)),
                   const SizedBox(height: 24),
 
                   // 통계 카드 섹션
                   _buildStatsCard(history),
                   const SizedBox(height: 24),
 
-                  const Text('최근 기록', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text('최근 기록', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 16),
 
                   Expanded(
                     child: history.isEmpty
-                        ? const Center(child: Text('아직 기록이 없습니다', style: TextStyle(color: Colors.white54)))
+                        ? const Center(child: Text('아직 기록이 없습니다', style: TextStyle(color: AppColors.textTertiary)))
                         : ListView.builder(
-                      itemCount: history.length,
-                      itemBuilder: (context, index) {
-                        // [Simple Example] 최신 기록이 위로 오도록 역순으로 정렬합니다.
-                        final record = history[history.length - 1 - index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: _buildHistoryCard(record),
-                        );
-                      },
-                    ),
+                          itemCount: history.length,
+                          itemBuilder: (context, index) {
+                            final record = history[history.length - 1 - index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12.0),
+                              child: _buildHistoryCard(record),
+                            );
+                          },
+                        ),
                   ),
                 ],
               ),
@@ -68,24 +62,22 @@ class CalendarScreen extends StatelessWidget {
     );
   }
 
-  // [Critical Fix] 리스트 내부 항목에 as int를 사용하여 타입을 명시합니다.
   Widget _buildStatsCard(List history) {
     final totalDays = history.length;
     final successDays = history.where((r) => r.status.name == 'success').length;
 
-    // [How] fold를 사용해 전체 퀘스트와 완료된 퀘스트 합계를 구합니다.
     final totalQuests = history.fold<int>(0, (sum, r) => sum + (r.totalQuests as int));
     final completedQuests = history.fold<int>(0, (sum, r) => sum + (r.completedQuests as int));
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0xFF1E2A3A), borderRadius: BorderRadius.circular(16)),
+      decoration: AppDecorations.card(),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem(icon: Icons.calendar_today, label: '총 일수', value: '$totalDays일', color: const Color(0xFF4FC3F7)),
-          _buildStatItem(icon: Icons.check_circle, label: '성공', value: '$successDays일', color: Colors.green),
-          _buildStatItem(icon: Icons.assignment, label: '완료', value: '$completedQuests/$totalQuests', color: Colors.amber),
+          _buildStatItem(icon: Icons.calendar_today, label: '총 일수', value: '$totalDays일', color: AppColors.primary),
+          _buildStatItem(icon: Icons.check_circle, label: '성공', value: '$successDays일', color: AppColors.success),
+          _buildStatItem(icon: Icons.assignment, label: '완료', value: '$completedQuests/$totalQuests', color: AppColors.warning),
         ],
       ),
     );
@@ -96,7 +88,7 @@ class CalendarScreen extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 28),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
       ],
@@ -118,11 +110,7 @@ class CalendarScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
-      ),
+      decoration: AppDecorations.featureCard(accentColor: statusColor),
       child: Row(
         children: [
           Container(
@@ -135,9 +123,9 @@ class CalendarScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(date, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(date, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 const SizedBox(height: 4),
-                Text('$completed/$total 완료', style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                Text('$completed/$total 완료', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               ],
             ),
           ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../achievements/achievements_screen.dart';
 
 /// 설정 화면
@@ -9,18 +11,9 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1A3A52),
-            Color(0xFF0D1B2A),
-          ],
-        ),
-      ),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -28,10 +21,11 @@ class SettingsScreen extends StatelessWidget {
             children: [
               // 헤더
               const Text(
-                '설정',
+                'Menu',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -147,10 +141,7 @@ class SettingsScreen extends StatelessWidget {
     required List<Widget> children,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDecorations.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -161,7 +152,7 @@ class SettingsScreen extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4FC3F7),
+                color: AppColors.secondaryPastel,
               ),
             ),
           ),
@@ -179,7 +170,7 @@ class SettingsScreen extends StatelessWidget {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? Colors.red : const Color(0xFF4FC3F7);
+    final color = isDestructive ? AppColors.highlightPink : AppColors.secondaryPastel;
 
     return InkWell(
       onTap: onTap,
@@ -190,8 +181,8 @@ class SettingsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
@@ -204,8 +195,8 @@ class SettingsScreen extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDestructive ? Colors.red : Colors.white,
+                      fontWeight: FontWeight.w600,
+                      color: isDestructive ? AppColors.highlightPink : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -213,15 +204,15 @@ class SettingsScreen extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.white70,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: Colors.white54,
+              color: AppColors.textTertiary,
             ),
           ],
         ),
@@ -242,30 +233,48 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E2A3A),
+        backgroundColor: AppColors.surface,
         title: const Row(
           children: [
             Text('🐠', style: TextStyle(fontSize: 32)),
             SizedBox(width: 12),
-            Text('My Tiny Aquarium'),
+            Text(
+              'My Tiny Aquarium',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('버전: 1.0.0'),
-            SizedBox(height: 8),
+            const Text(
+              '버전: 1.0.0',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
               '나만의 작은 수족관에서 물고기를 키우며 생산적인 하루를 만들어보세요.',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
+            child: const Text(
+              '확인',
+              style: TextStyle(
+                color: AppColors.primaryPastel,
+              ),
+            ),
           ),
         ],
       ),
@@ -276,21 +285,37 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E2A3A),
-        title: const Row(
+        backgroundColor: AppColors.surface,
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.red),
-            SizedBox(width: 12),
-            Text('데이터 초기화'),
+            const Icon(
+              Icons.warning,
+              color: AppColors.highlightPink,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '데이터 초기화',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
         content: const Text(
           '모든 데이터가 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.\n\n정말 초기화하시겠습니까?',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('취소'),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -304,12 +329,12 @@ class SettingsScreen extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('데이터가 초기화되었습니다'),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.statusSuccess,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.highlightPink,
             ),
             child: const Text('초기화'),
           ),
