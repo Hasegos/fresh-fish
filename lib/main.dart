@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
+import 'providers/user_data_provider.dart';
 import 'screens/auth/login_screen.dart';
 
 Future<void> main() async {
@@ -38,8 +39,15 @@ class FishQuestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppProvider()..initialize(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AppProvider()..initialize(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserDataProvider(),
+        ),
+      ],
       child: MaterialApp(
         title: 'Fresh Fish - 자기계발 습관 추적기',
         debugShowCheckedModeBanner: false,
