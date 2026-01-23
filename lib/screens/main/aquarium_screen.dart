@@ -10,7 +10,9 @@ import '../../widgets/bottom_navigation.dart';
 
 /// 메인 어항 화면 - 새로운 아키텍처
 class AquariumScreen extends StatefulWidget {
-  const AquariumScreen({super.key});
+  final Function(int)? onNavChanged;
+
+  const AquariumScreen({super.key, this.onNavChanged});
 
   @override
   State<AquariumScreen> createState() => _AquariumScreenState();
@@ -147,9 +149,8 @@ class _AquariumScreenState extends State<AquariumScreen>
                 child: BottomNavigation(
                   currentIndex: 0,
                   onTap: (index) {
-                    if (index != 0) {
-                      Navigator.of(context).pushNamed(_getRouteName(index));
-                    }
+                    if (index == 0) return;
+                    widget.onNavChanged?.call(index);
                   },
                 ),
               ),
@@ -496,21 +497,6 @@ class _AquariumScreenState extends State<AquariumScreen>
         return '보통';
       case Difficulty.hard:
         return '어려움';
-    }
-  }
-
-  String _getRouteName(int index) {
-    switch (index) {
-      case 1:
-        return '/todos';
-      case 2:
-        return '/timer';
-      case 3:
-        return '/calendar';
-      case 4:
-        return '/menu';
-      default:
-        return '/';
     }
   }
 }
