@@ -18,9 +18,17 @@ class AppProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _userData = await _storage.getUserData();
+      // 최대 3초 대기
+      _userData = await _storage.getUserData().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('⚠️ Storage 로딩 타임아웃 - 새 데이터 시작');
+          return null;
+        },
+      );
     } catch (e) {
       debugPrint('초기화 에러: $e');
+      _userData = null;
     } finally {
       _isLoading = false;
       notifyListeners();

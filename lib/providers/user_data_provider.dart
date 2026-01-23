@@ -24,11 +24,18 @@ class UserDataProvider extends ChangeNotifier {
 
     print("🚀 [Provider LOG 1] 데이터 로딩 시작...");
     try {
-      _userData = await _storageService.getUserData();
+      _userData = await _storageService.getUserData().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('⚠️ UserDataProvider Storage 로딩 타임아웃');
+          return null;
+        },
+      );
       print("🚀 [Provider LOG 2] 데이터 로딩 성공: ${_userData != null}");
     } catch (e) {
       print("❌ [Provider ERROR] 로딩 중 에러 발생: $e");
       debugPrint('Error loading user data: $e');
+      _userData = null;
     }
 
     _isLoading = false;
