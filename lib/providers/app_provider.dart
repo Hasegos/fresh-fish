@@ -107,4 +107,13 @@ class AppProvider extends ChangeNotifier {
     _userData = null;
     notifyListeners();
   }
+
+  /// 온보딩 완료 처리
+  Future<void> setOnboardingComplete() async {
+    if (_userData != null) {
+      _userData = _userData!.copyWith(onboardingCompleted: true);
+      notifyListeners();
+      await _storage.saveUserData(_userData!);
+    }
+  }
 }

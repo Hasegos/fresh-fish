@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../models/fish_model.dart';
+import '../../providers/app_provider.dart';
 
 /// 알 선택 화면
 /// 유저가 처음 앱을 시작할 때 키울 물고기를 고르는 화면입니다.
@@ -75,8 +77,13 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     setState(() => _isCreating = true);
 
     try {
+      // AppProvider에서 onboarding 완료 처리
+      final appProvider = context.read<AppProvider>();
+      appProvider.setOnboardingComplete();
+      
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/app');
+        // AppScreen으로 복귀 (AppProvider의 상태 변경으로 자동 라우팅)
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
       }
     } catch (e) {
       if (mounted) {
