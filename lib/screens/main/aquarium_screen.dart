@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_data_provider.dart';
-import '../../models/user_data_model.dart'; // [중요] UserData 타입을 인식하기 위해 반드시 필요합니다.
+import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
+import '../../theme/app_text_styles.dart';
 import '../../widgets/aquarium_viewport.dart';
 import '../../widgets/bottom_navigation.dart';
 
@@ -13,17 +16,15 @@ class AquariumScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Consumer<UserDataProvider>(
         builder: (context, provider, child) {
           final userData = provider.userData;
 
           // 데이터 로딩 중이거나 없는 경우 처리
           if (userData == null) {
-            return Container(
-              color: Color(0xFF0A1628),
-              child: Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
+            return Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
@@ -35,32 +36,22 @@ class AquariumScreen extends StatelessWidget {
 
           return Stack(
             children: [
-              // 배경 및 메인 레이아웃
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF0A1628), Color(0xFF1B263B)],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      _buildHeader(gold),
-                      Expanded(
-                        child: AquariumViewport(
-                          fish: fish,
-                          waterQuality: userData.waterQuality,
-                          decorations: userData.decorations,
-                        ),
+              // 메인 레이아웃
+              SafeArea(
+                child: Column(
+                  children: [
+                    _buildHeader(context, gold),
+                    Expanded(
+                      child: AquariumViewport(
+                        fish: fish,
+                        waterQuality: userData.waterQuality,
+                        decorations: userData.decorations,
                       ),
-                      _buildFishInfoCard(fish, expToNextLevel, expProgress),
-                      // 모델의 Getter를 사용하는 개선된 위젯 호출
-                      _buildDailyProgress(context, userData),
-                      const SizedBox(height: 100),
-                    ],
-                  ),
+                    ),
+                    _buildFishInfoCard(fish, expToNextLevel, expProgress),
+                    _buildDailyProgress(context, userData),
+                    const SizedBox(height: 100),
+                  ],
                 ),
               ),
               // 하단 네비게이션
@@ -71,8 +62,7 @@ class AquariumScreen extends StatelessWidget {
                 child: BottomNavigation(
                   currentIndex: 0,
                   onTap: (index) {
-                    // 여기에 화면 전환 로직을 추가할 예정입니다.
-                    print("Selected Index: $index");
+                    debugPrint("Selected Index: $index");
                   },
                 ),
               ),
@@ -84,29 +74,45 @@ class AquariumScreen extends StatelessWidget {
   }
 
   /// 헤더: 골드 표시
-  Widget _buildHeader(int gold) {
+  Widget _buildHeader(BuildContext context, int gold) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'My Tiny Aquarium',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          Text(
+            'Fresh Fish',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ) ??
+                const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF9E6),
+              color: AppColors.highlight.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.highlight.withOpacity(0.3),
+                width: 0.5,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.monetization_on, color: Color(0xFFF9A825), size: 18),
+                Icon(Icons.monetization_on,
+                    color: AppColors.highlight, size: 18),
                 const SizedBox(width: 4),
                 Text(
                   gold.toString(),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFF57F17)),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -121,11 +127,7 @@ class AquariumScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B263B).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF415A77).withOpacity(0.3)),
-      ),
+      decoration: AppDecorations.card(color: AppColors.surface),
       child: Column(
         children: [
           Row(
@@ -133,7 +135,6 @@ class AquariumScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  // Fish 모델의 emoji 필드 사용
                   Text(fish.type.emoji, style: const TextStyle(fontSize: 32)),
                   const SizedBox(width: 12),
                   Column(
@@ -141,14 +142,36 @@ class AquariumScreen extends StatelessWidget {
                     children: [
                       Text(
                         fish.type.displayName,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ) ??
+                            const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                       ),
-                      Text('Lv.${fish.level}', style: const TextStyle(fontSize: 14, color: Color(0xFF778DA9))),
+                      Text(
+                        'Lv.${fish.level}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ) ??
+                            const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
                     ],
                   ),
                 ],
               ),
-              Text('${fish.exp}/$maxExp EXP', style: const TextStyle(fontSize: 12, color: Color(0xFF90A4AE))),
+              Text(
+                '${fish.exp}/$maxExp EXP',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textTertiary,
+                    ) ??
+                    const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -157,8 +180,8 @@ class AquariumScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (progress / 100).clamp(0.0, 1.0),
               minHeight: 8,
-              backgroundColor: const Color(0xFF0D1B2A),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+              backgroundColor: AppColors.surfaceLight,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
           ),
         ],
@@ -167,39 +190,42 @@ class AquariumScreen extends StatelessWidget {
   }
 
   /// 일일 진행 상황: 오늘 완료한 퀘스트와 ToDo 표시
-  /// [Point] 모델에 미리 정의해둔 Getter를 사용하여 로직을 단순화했습니다.
   Widget _buildDailyProgress(BuildContext context, UserData userData) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B263B).withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF415A77).withOpacity(0.3)),
-      ),
+      decoration: AppDecorations.card(color: AppColors.surface),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('오늘의 진행상황', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text(
+            '오늘의 진행상황',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ) ??
+                const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
-              // 일일 퀘스트 진행도
               Expanded(
                 child: _buildProgressItem(
                   '✨',
                   'Dailies',
-                  userData.todayCompletedQuests, // 모델의 계산된 값 사용
+                  userData.todayCompletedQuests,
                   userData.todayTotalQuests,
                 ),
               ),
               const SizedBox(width: 12),
-              // 전체 ToDo 진행도
               Expanded(
                 child: _buildProgressItem(
                   '✅',
                   'To Do',
-                  userData.completedTodos,      // 모델의 계산된 값 사용
+                  userData.completedTodos,
                   userData.todos.length,
                 ),
               ),
@@ -215,19 +241,36 @@ class AquariumScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1B2A).withOpacity(0.5),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFEEEEEE),
+          width: 0.5,
+        ),
       ),
       child: Column(
         children: [
           Text(emoji, style: const TextStyle(fontSize: 24)),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF778DA9))),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ) ??
+                const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 4),
-          // 분모가 0인 경우 처리
           Text(
             '$completed/$total',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ) ??
+                const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
           ),
         ],
       ),
