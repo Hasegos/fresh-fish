@@ -8,10 +8,12 @@ import '../../providers/app_provider.dart';
 /// 유저가 처음 앱을 시작할 때 키울 물고기를 고르는 화면입니다.
 class EggSelectionScreen extends StatefulWidget {
   final List<String> selectedCategories;
+  final VoidCallback? onComplete;
 
   const EggSelectionScreen({
     Key? key,
     required this.selectedCategories,
+    this.onComplete,
   }) : super(key: key);
 
   @override
@@ -79,12 +81,10 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     try {
       // AppProvider에서 onboarding 완료 처리
       final appProvider = context.read<AppProvider>();
-      appProvider.setOnboardingComplete();
-      
-      if (mounted) {
-        // AppScreen으로 복귀 (AppProvider의 상태 변경으로 자동 라우팅)
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
-      }
+      appProvider.setOnboardingComplete(); 
+
+      widget.onComplete?.call();
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -90,6 +90,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 2:
         return EggSelectionScreen(
           selectedCategories: _selectedCategories,
+          onComplete: () {
+            debugPrint('🎉 Step 2 완료 → 온보딩 완료 처리');
+            final appProvider = Provider.of<AppProvider>(context, listen: false);
+            appProvider.updateUserData(
+              (data) => data.copyWith(onboardingCompleted: true),
+            );
+            // setState 호출 불필요 - Provider가 rebuild를 트리거함
+          },
         );
       default:
         return const OnboardingScreen(onComplete: null);
