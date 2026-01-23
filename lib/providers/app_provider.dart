@@ -112,8 +112,8 @@ class AppProvider extends ChangeNotifier {
   Future<void> setOnboardingComplete() async {
     if (_userData != null) {
       _userData = _userData!.copyWith(onboardingCompleted: true);
-      notifyListeners();
       await _storage.saveUserData(_userData!);
+      notifyListeners();
     }
   }
 }

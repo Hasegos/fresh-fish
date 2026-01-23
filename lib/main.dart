@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
 import 'providers/user_data_provider.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/app_screen.dart';
+import 'screens/main/main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,14 +46,45 @@ class FishQuestApp extends StatelessWidget {
           create: (_) => AppProvider()..initialize(),
         ),
         ChangeNotifierProvider(
-          create: (_) => UserDataProvider(),
+          create: (_) => UserDataProvider()..initialize(),
         ),
       ],
       child: MaterialApp(
         title: 'Fresh Fish - 자기계발 습관 추적기',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const LoginScreen(),
+        home: Consumer<AppProvider>(
+          builder: (context, appProvider, _) {
+            // 로딩 중
+            if (appProvider.isLoading) {
+              return const Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('🐠', style: TextStyle(fontSize: 80)),
+                      SizedBox(height: 24),
+                      CircularProgressIndicator(color: Color(0xFF4FC3F7)),
+                      SizedBox(height: 16),
+                      Text(
+                        'My Tiny Aquarium',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // 온보딩 미완료
+            if (!appProvider.isOnboardingComplete) {
+              return const OnboardingFlow();
+            }
+
+            // 온보딩 완료 -> 메인 화면
+            return const MainScreen();
+          },
+        ),
       ),
     );
   }

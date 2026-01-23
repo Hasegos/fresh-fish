@@ -43,12 +43,14 @@ class AppScreen extends StatelessWidget {
           );
         }
 
-        // 온보딩 완료 여부 확인
-        if (!provider.isOnboardingComplete) {
+        // userData가 없거나 onboarding이 안됨
+        if (provider.userData == null || !provider.isOnboardingComplete) {
+          debugPrint('🔄 OnboardingFlow로 진입 (userData: ${provider.userData != null}, onboarding: ${provider.isOnboardingComplete})');
           return const OnboardingFlow();
         }
 
         // 메인 앱
+        debugPrint('✅ MainScreen으로 진입');
         return const MainScreen();
       },
     );
