@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_decorations.dart';
 import '../../providers/app_provider.dart';
 // [Mentor Tip] 실제 모델 클래스를 임포트하면 dynamic 대신 정확한 타입을 쓸 수 있습니다.
 // import '../../models/achievement_model.dart';

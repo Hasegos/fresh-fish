@@ -5,7 +5,6 @@ import '../../providers/app_provider.dart';
 import '../../models/timer_model.dart';
 import '../../data/timer_categories.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_decorations.dart';
 
 /// [TimerScreen]
 /// 사용자가 특정 카테고리를 선택해 집중 시간을 측정하고 보상을 받는 화면입니다.

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_decorations.dart';
 import '../../models/fish_model.dart';
-import '../../providers/app_provider.dart';
-import '../../services/storage_service.dart';
 
 /// 알 선택 화면
 /// 유저가 처음 앱을 시작할 때 키울 물고기를 고르는 화면입니다.
@@ -79,30 +75,18 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     setState(() => _isCreating = true);
 
     try {
-      final storage = StorageService();
-      // 1. 초기 사용자 데이터 객체 생성
-      final userData = storage.createInitialUser(
-        _selectedFish!,
-        widget.selectedCategories,
-      );
-
-      // 2. Provider를 통해 데이터 저장 및 상태 반영
-      await context.read<AppProvider>().saveUserData(userData);
-
-      if (!mounted) return;
-
-      // 3. 메인 화면으로 이동 (뒤로가기를 할 수 없도록 pushReplacement 사용)
-      Navigator.of(context).pushReplacementNamed('/main');
-
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/app');
+      }
     } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('오류가 발생했습니다: $e'),
-          backgroundColor: AppColors.highlightPink,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('오류 발생: $e'),
+            backgroundColor: AppColors.highlightPink,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isCreating = false);
@@ -112,106 +96,109 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 맵에 정의된 데이터들만 리스트로 가져와 런타임 에러를 방지합니다.
-    final availableFishTypes = _fishData.keys.toList();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-
-              // 제목 이콘
-              const Text(
-                '🥚',
-                style: TextStyle(fontSize: 80),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                '물고기 알 선택',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '키우고 싶은 물고기를 선택하세요\n함께 퀘스트를 하며 성장합니다',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-
-              // 물고기 카드 목록
-              Expanded(
-                child: ListView.builder(
-                  itemCount: availableFishTypes.length,
-                  itemBuilder: (context, index) {
-                    final fishType = availableFishTypes[index];
-                    final data = _fishData[fishType]!;
-                    final isSelected = _selectedFish == fishType;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildFishCard(
-                        fishType: fishType,
-                        name: data['name'] as String,
-                        emoji: data['emoji'] as String,
-                        color: data['color'] as Color,
-                        description: data['description'] as String,
-                        isSelected: isSelected,
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 시작 버튼 영역
-              if (_isCreating)
-                const CircularProgressIndicator(
-                  color: AppColors.primaryPastel,
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _createUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryPastel,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+        child: Column(
+          children: [
+            // 헤더 (진행도 표시)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '물고기 선택',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
-                    child: const Text(
-                      '시작하기',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '함께 할 물고기를 선택하세요',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // 진행도 표시
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: 0.67,
+                      minHeight: 8,
+                      backgroundColor: AppColors.borderLight,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryPastel,
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+
+            // 물고기 선택 리스트
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _fishData.length,
+                itemBuilder: (context, index) {
+                  final fishType = _fishData.keys.toList()[index];
+                  final fishInfo = _fishData[fishType]!;
+                  return _buildFishCard(
+                    fishType: fishType,
+                    name: fishInfo['name'],
+                    emoji: fishInfo['emoji'],
+                    color: fishInfo['color'],
+                    description: fishInfo['description'],
+                    isSelected: _selectedFish == fishType,
+                  );
+                },
+              ),
+            ),
+
+            // 버튼
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: _isCreating ? null : _createUser,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryPastel,
+                  disabledBackgroundColor: AppColors.textTertiary,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
-            ],
-          ),
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        '선택 완료',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// 물고기 선택 카드 위젯
   Widget _buildFishCard({
     required FishType fishType,
     required String name,
@@ -220,64 +207,70 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     required String description,
     required bool isSelected,
   }) {
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedFish = fishType);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? color.withOpacity(0.15)
-              : const Color(0xFF1E2A3A).withOpacity(0.8),
-          border: Border.all(
-            color: isSelected ? color : Colors.white10,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            // 물고기 이모지 ? color.withOpacity(0.12) : AppColors.surface,
-          border: Border.all(
-            color: isSelected ? color : AppColors.borderLight,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            // 물고기 이모지
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 60),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedFish = fishType),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.12) : AppColors.surface,
+            border: Border.all(
+              color: isSelected ? color : AppColors.borderLight,
+              width: 2,
             ),
-            const SizedBox(width: 20),
-
-            // 물고기 설명 텍스트
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? color : AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary
-                color: color,
-                size: 32,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              // 물고기 이모지
+              Text(
+                emoji,
+                style: const TextStyle(fontSize: 60),
               ),
-          ],
+              const SizedBox(width: 20),
+
+              // 물고기 설명 텍스트
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? color : AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 선택 표시
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: isSelected
+                    ? Icon(
+                        Icons.check_circle,
+                        color: color,
+                        size: 32,
+                      )
+                    : Icon(
+                        Icons.circle_outlined,
+                        color: AppColors.borderMedium,
+                        size: 32,
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
