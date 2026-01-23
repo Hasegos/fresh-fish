@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -20,16 +21,30 @@ Future<void> main() async {
         projectId: "your-project-id",
       ),
     );
-    debugPrint('✅ Firebase 초기화 성공');
+    if (kDebugMode) {
+      debugPrint('✅ Firebase 초기화 성공');
+    }
   } on FirebaseException catch (e) {
     if (e.code == 'duplicate-app') {
-      final app = Firebase.app();
-      debugPrint('✅ Firebase 이미 존재함 -> 재사용: ${app.name}');
+      try {
+        final app = Firebase.app();
+        if (kDebugMode) {
+          debugPrint('✅ Firebase 이미 존재함 -> 재사용: ${app.name}');
+        }
+      } catch (appError) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Firebase 앱 재사용 실패: $appError');
+        }
+      }
     } else {
-      debugPrint('⚠️ Firebase 초기화 실패(FirebaseException): ${e.code} / ${e.message}');
+      if (kDebugMode) {
+        debugPrint('⚠️ Firebase 초기화 실패(FirebaseException): ${e.code} / ${e.message}');
+      }
     }
   } catch (e) {
-    debugPrint('⚠️ Firebase 초기화 실패(기타): $e');
+    if (kDebugMode) {
+      debugPrint('⚠️ Firebase 초기화 실패(기타): $e');
+    }
   }
 
   runApp(const FishQuestApp());
@@ -55,40 +70,40 @@ class FishQuestApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: Consumer<AppProvider>(
           builder: (context, appProvider, _) {
-            debugPrint('🔍 AppProvider 상태: isLoading=${appProvider.isLoading}, isOnboardingComplete=${appProvider.isOnboardingComplete}, userData=${appProvider.userData}');
-            
-            // 로딩 중
-            if (appProvider.isLoading) {
-              debugPrint('⏳ 로딩 화면 표시');
-              return const Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('🐠', style: TextStyle(fontSize: 80)),
-                      SizedBox(height: 24),
-                      CircularProgressIndicator(color: Color(0xFF4FC3F7)),
-                      SizedBox(height: 16),
-                      Text(
-                        'My Tiny Aquarium',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+            if (kDebugMode) {
+              debugPrint('🔍 AppProvider 상태: isLoading=${appProvider.isLoading}, isOnboardingComplete=${appProvider.isOnboardingComplete}, userData=${appProvider.userData}');
             }
 
-            // 온보딩 미완료
+            if (appProvider.isLoading) {
+              return _buildLoadingScreen();
+            }
+
             if (!appProvider.isOnboardingComplete) {
-              debugPrint('🔄 OnboardingFlow로 진입');
               return const OnboardingFlow();
             }
 
-            // 온보딩 완료 -> 메인 화면
-            debugPrint('✅ MainScreen으로 진입');
             return const MainScreen();
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('🐠', style: TextStyle(fontSize: 80)),
+            SizedBox(height: 24),
+            CircularProgressIndicator(color: Color(0xFF4FC3F7)),
+            SizedBox(height: 16),
+            Text(
+              'My Tiny Aquarium',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       ),
     );

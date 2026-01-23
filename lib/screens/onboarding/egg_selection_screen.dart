@@ -81,17 +81,19 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     try {
       // AppProvider에서 onboarding 완료 처리
       final appProvider = context.read<AppProvider>();
-      appProvider.setOnboardingComplete(); 
+      await appProvider.setOnboardingComplete();
 
+      // onComplete 콜백 호출
       widget.onComplete?.call();
 
+      // 메인 화면으로 이동
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('오류 발생: $e'),
-            backgroundColor: AppColors.highlightPink,
-          ),
+          SnackBar(content: Text('오류 발생: $e')),
         );
       }
     } finally {
