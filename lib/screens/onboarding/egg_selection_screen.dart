@@ -8,7 +8,7 @@ import '../../providers/app_provider.dart';
 /// 유저가 처음 앱을 시작할 때 키울 물고기를 고르는 화면입니다.
 class EggSelectionScreen extends StatefulWidget {
   final List<String> selectedCategories;
-  final VoidCallback? onComplete;
+  final Function(FishType)? onComplete;
 
   const EggSelectionScreen({
     Key? key,
@@ -64,7 +64,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     },
   };
 
-  /// [핵심 로직] 사용자 생성 및 메인 화면 이동
+  /// [핵심 로직] 사용자 생성 및 다음 단계 진행
   Future<void> _createUser() async {
     if (_selectedFish == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,25 +79,14 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     setState(() => _isCreating = true);
 
     try {
-      // AppProvider에서 onboarding 완료 처리
-      final appProvider = context.read<AppProvider>();
-      await appProvider.setOnboardingComplete();
-
-      // onComplete 콜백 호출
-      widget.onComplete?.call();
-
-      // 메인 화면으로 이동
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
+      // 선택된 물고기 정보를 onComplete 콜백으로 전달
+      // OnboardingFlow가 이를 받아 UserData를 생성함
+      widget.onComplete?.call(_selectedFish!);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('오류 발생: $e')),
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isCreating = false);
       }
     }
