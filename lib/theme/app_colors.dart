@@ -11,9 +11,13 @@ import 'package:flutter/material.dart';
 class AppColors {
   // ============ 기본 색상 (파스텔 톤 포인트) ============
   static const Color primary = Color(0xFF7DD3C0); // 파스텔 민트 (메인 액션)
+  static const Color primaryPastel = Color(0xFF7DD3C0); // 파스텔 민트 (메인 액션)
   static const Color secondary = Color(0xFF81E6D9); // 밝은 민트 (보조)
+  static const Color secondaryPastel = Color(0xFF81E6D9); // 밝은 민트 (보조)
   static const Color accent = Color(0xFFB4A7D6); // 파스텔 라벤더 (강조)
+  static const Color accentPastel = Color(0xFFB4A7D6); // 파스텔 라벤더 (강조)
   static const Color highlight = Color(0xFFFCA5A5); // 파스텔 핑크 (특별 강조)
+  static const Color highlightPink = Color(0xFFFCA5A5); // 파스텔 핑크 (특별 강조)
   
   // ============ 배경 색상 ============
   static const Color background = Color(0xFFF8F9FA); // 극도로 밝은 회색
@@ -26,6 +30,11 @@ class AppColors {
   static const Color textSecondary = Color(0xFF666666); // 중간 그레이 (보조 텍스트)
   static const Color textTertiary = Color(0xFF999999); // 밝은 그레이 (비활성 텍스트)
   static const Color textDisabled = Color(0xFFCCCCCC); // 비활성 색상
+  
+  // ============ 테두리 색상 ============
+  static const Color borderLight = Color(0xFFE0E0E0); // 밝은 테두리
+  static const Color borderMedium = Color(0xFFBDBDBD); // 중간 테두리
+  static const Color borderDark = Color(0xFF9E9E9E); // 어두운 테두리
   
   // ============ 카테고리 색상 (파스텔 톤) ============
   static const Map<String, Color> categoryColors = {
@@ -43,6 +52,7 @@ class AppColors {
   
   // ============ 상태 색상 ============
   static const Color success = Color(0xFF6BBF8E); // 성공 (초록)
+  static const Color statusSuccess = Color(0xFF6BBF8E); // 성공 (초록)
   static const Color warning = Color(0xFFD4A574); // 경고 (갈색)
   static const Color error = Color(0xFFC9726A); // 에러 (붉은색)
   static const Color info = Color(0xFF87CEEB); // 정보 (스카이블루)

@@ -90,7 +90,7 @@ class AchievementsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [AppColors.primaryPastel, AppColors.secondaryPastel],
         ),
         borderRadius: BorderRadius.circular(24),
@@ -112,7 +112,28 @@ class AchievementsScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,AppColors.accentPastel),
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '$unlocked / $total',
+            style: const TextStyle(
+              fontSize: 18,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 통계 그리드
+  Widget _buildStatsGrid(dynamic userData) {
+    return Row(
+      children: [
+        _buildStatItem('레벨', '${userData.fish.level}', AppColors.accentPastel),
         const SizedBox(width: 10),
         _buildStatItem('골드', '${userData.gold}', AppColors.highlightPink),
       ],
@@ -144,27 +165,23 @@ class AchievementsScreen extends StatelessWidget {
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
-            
-
-  // 통계 그리드
-  Widget _buildStatsGrid(dynamic userData) {
-    return Row(
-      children: [
-        _buildStatItem('레벨', '${userData.fish.level}', Colors.amber),
-        const SizedBox(width: 10),
-        _buildStatItem('골드', '${userData.gold}', Colors.yellow),
-      ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: const Color(0xFF1E2A3A), borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          children: [
-            Text(label, stylAppColors.surface : AppColors.background,
+  // [Critical Fix] 에러가 발생했던 핵심 함수
+  Widget _buildAchievementCard(dynamic achievement) {
+    // [How] as String을 사용하여 dynamic 타입을 String으로 명시해줍니다.
+    final String iconEmoji = achievement.icon as String;
+    final String title = achievement.title as String;
+    final bool isUnlocked = achievement.unlocked == true;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isUnlocked ? AppColors.surface : AppColors.background,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isUnlocked
@@ -197,24 +214,7 @@ class AchievementsScreen extends StatelessWidget {
               Icons.lock,
               size: 16,
               color: AppColors.textTertiary,
-            
-    return Container(
-      decoration: BoxDecoration(
-        color: isUnlocked ? const Color(0xFF1E2A3A) : Colors.black26,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isUnlocked ? const Color(0xFF4FC3F7) : Colors.transparent),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(iconEmoji, style: TextStyle(fontSize: 40, color: isUnlocked ? null : Colors.white24)),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(fontSize: 12, color: isUnlocked ? Colors.white : Colors.white24),
-            textAlign: TextAlign.center,
-          ),
-          if (!isUnlocked) const Icon(Icons.lock, size: 16, color: Colors.white24),
+            ),
         ],
       ),
     );
