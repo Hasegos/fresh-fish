@@ -331,7 +331,7 @@ class UserData {
       habits: habits ?? this.habits,
       todos: todos ?? this.todos,
       history: history ?? this.history,
-      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      onboardingCompleted: onboardingCompleted != null ? onboardingCompleted : this.onboardingCompleted,
       notificationTime: notificationTime ?? this.notificationTime,
       selectedCategories: selectedCategories ?? this.selectedCategories,
       waterQuality: waterQuality ?? this.waterQuality,
