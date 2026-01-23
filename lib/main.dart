@@ -68,6 +68,9 @@ class FishQuestApp extends StatelessWidget {
         title: 'Fresh Fish - 자기계발 습관 추적기',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        routes: {
+          '/home': (context) => const MainScreen(),
+        },
         home: Consumer<AppProvider>(
           builder: (context, appProvider, _) {
             if (kDebugMode) {
