@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
@@ -38,7 +40,7 @@ class AquariumScreen extends StatelessWidget {
                   _buildHeader(userData),
                   const SizedBox(height: 24),
                   Expanded(
-                    child: _buildAquariumDisplay(stage, fish),
+                    child: _AquariumAnimation(stage: stage, fish: fish),
                   ),
                   const SizedBox(height: 24),
                   _buildStats(fish, userData),
@@ -76,27 +78,6 @@ class AquariumScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAquariumDisplay(GrowthStage stage, dynamic fish) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A).withOpacity(0.5),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF4FC3F7).withOpacity(0.3), width: 2),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_getFishEmoji(stage), style: const TextStyle(fontSize: 120)),
-            const SizedBox(height: 16),
-            Text('레벨 ${fish.level}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // [Critical Fix] 매개변수에 정확한 타입을 명시하거나 명시적 형변환을 사용합니다.
   Widget _buildStats(dynamic fish, dynamic userData) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -160,17 +141,97 @@ class AquariumScreen extends StatelessWidget {
     return GrowthStage.adult;
   }
 
-  String _getFishEmoji(GrowthStage stage) {
-    switch (stage) {
-      case GrowthStage.egg: return '🥚';
-      case GrowthStage.juvenile: return '🐟';
-      case GrowthStage.adult: return '🐠';
-    }
-  }
-
   Color _getHpColor(int hp) {
     if (hp > 60) return Colors.green;
     if (hp > 30) return Colors.orange;
     return Colors.red;
+  }
+}
+
+class _AquariumAnimation extends StatefulWidget {
+  final GrowthStage stage;
+  final dynamic fish;
+
+  const _AquariumAnimation({
+    Key? key,
+    required this.stage,
+    required this.fish,
+  }) : super(key: key);
+
+  @override
+  State<_AquariumAnimation> createState() => _AquariumAnimationState();
+}
+
+class _AquariumAnimationState extends State<_AquariumAnimation> {
+  final Random _random = Random();
+  double _fishX = 0.0;
+  double _fishY = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startFishAnimation();
+  }
+
+  void _startFishAnimation() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _fishX = _random.nextDouble() * MediaQuery.of(context).size.width * 0.8;
+          _fishY = _random.nextDouble() * MediaQuery.of(context).size.height * 0.4;
+        });
+        _startFishAnimation();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E2A3A).withOpacity(0.5),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF4FC3F7).withOpacity(0.3), width: 2),
+          ),
+        ),
+        AnimatedPositioned(
+          duration: const Duration(seconds: 2),
+          curve: Curves.easeInOut,
+          left: _fishX,
+          top: _fishY,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _getFishEmoji(widget.stage),
+                style: const TextStyle(fontSize: 120),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '레벨 ${widget.fish.level}',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getFishEmoji(GrowthStage stage) {
+    switch (stage) {
+      case GrowthStage.egg:
+        return '🥚';
+      case GrowthStage.juvenile:
+        return '🐟';
+      case GrowthStage.adult:
+        return '🐠';
+    }
   }
 }
