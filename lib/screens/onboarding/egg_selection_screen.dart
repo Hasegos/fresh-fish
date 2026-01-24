@@ -105,57 +105,61 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
               child: Stack(
                 children: [
                   // Aquarium background/content here
+                  Container(
+                    color: Colors.blueAccent.withOpacity(0.2),
+                  ),
                 ],
               ),
             ),
 
             // Bottom 55% - Task List Section
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.55,
-              child: Column(
-                children: [
-                  // 헤더 (진행도 표시)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '물고기 선택',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '함께 할 물고기를 선택하세요',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // 진행도 표시
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: 0.67,
-                            minHeight: 8,
-                            backgroundColor: AppColors.borderLight,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primaryPastel,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // 헤더 (진행도 표시)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '물고기 선택',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          const Text(
+                            '함께 할 물고기를 선택하세요',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // 진행도 표시
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: 0.67,
+                              minHeight: 8,
+                              backgroundColor: AppColors.borderLight,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primaryPastel,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  // 물고기 선택 리스트
-                  Expanded(
-                    child: ListView.builder(
+                    // 물고기 선택 리스트
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(16),
                       itemCount: _fishData.length,
                       itemBuilder: (context, index) {
@@ -171,42 +175,42 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
                         );
                       },
                     ),
-                  ),
 
-                  // 버튼
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: _isCreating ? null : _createUser,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryPastel,
-                        disabledBackgroundColor: AppColors.textTertiary,
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                    // 버튼
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton(
+                        onPressed: _isCreating ? null : _createUser,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryPastel,
+                          disabledBackgroundColor: AppColors.textTertiary,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
+                        child: _isCreating
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                '선택 완료',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
-                      child: _isCreating
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              '선택 완료',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
