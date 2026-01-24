@@ -65,141 +65,181 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 상단 수조 섹션
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.4,
-              child: Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: Colors.blueAccent.withOpacity(0.1),
-                    child: Center(
-                      child: _selectedFish != null
-                          ? Text(
-                              _fishData[_selectedFish]!['emoji'],
-                              style: const TextStyle(fontSize: 80),
-                            )
-                          : const Text(
-                              "물고기를 선택해 주세요",
-                              style: TextStyle(
-                                color: Colors.blueGrey,
-                                fontSize: 18,
-                              ),
-                            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0F2F1), Color(0xFFE3F2FD)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Top-left HUD
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    // Fish Icon
+                    Icon(Icons.fish, color: Colors.blueAccent, size: 32),
+                    const SizedBox(width: 8),
+
+                    // Level Bar
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: 0.5, // Example value
+                        backgroundColor: Colors.white,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+
+                    // Coin Text
+                    Text(
+                      '100', // Example coin value
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // 하단 리스트 섹션
-            Expanded(
-              child: Column(
-                children: [
-                  // 헤더
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '물고기 선택',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '함께 할 물고기를 선택하세요',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: 0.67,
-                            minHeight: 8,
-                            backgroundColor: AppColors.borderLight,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primaryPastel,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 물고기 선택 리스트
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      itemCount: _fishData.length,
-                      itemBuilder: (context, index) {
-                        final fishType = _fishData.keys.toList()[index];
-                        final fishInfo = _fishData[fishType]!;
-                        return _buildFishCard(
-                          fishType: fishType,
-                          name: fishInfo['name'],
-                          emoji: fishInfo['emoji'],
-                          color: fishInfo['color'],
-                          description: fishInfo['description'],
-                          isSelected: _selectedFish == fishType,
-                        );
-                      },
-                    ),
-                  ),
-
-                  // 하단 버튼
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: _isCreating ? null : _createUser,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryPastel,
-                        disabledBackgroundColor: AppColors.textTertiary,
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: _isCreating
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+              // 상단 수조 섹션
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.4,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      color: Colors.blueAccent.withOpacity(0.1),
+                      child: Center(
+                        child: _selectedFish != null
+                            ? Text(
+                                _fishData[_selectedFish]!['emoji'],
+                                style: const TextStyle(fontSize: 80),
+                              )
+                            : const Text(
+                                "물고기를 선택해 주세요",
+                                style: TextStyle(
+                                  color: Colors.blueGrey,
+                                  fontSize: 18,
                                 ),
                               ),
-                            )
-                          : const Text(
-                              '선택 완료',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 하단 리스트 섹션
+              Expanded(
+                child: Column(
+                  children: [
+                    // 헤더
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '물고기 선택',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            '함께 할 물고기를 선택하세요',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: 0.67,
+                              minHeight: 8,
+                              backgroundColor: AppColors.borderLight,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primaryPastel,
                               ),
                             ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+
+                    // 물고기 선택 리스트
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        itemCount: _fishData.length,
+                        itemBuilder: (context, index) {
+                          final fishType = _fishData.keys.toList()[index];
+                          final fishInfo = _fishData[fishType]!;
+                          return _buildFishCard(
+                            fishType: fishType,
+                            name: fishInfo['name'],
+                            emoji: fishInfo['emoji'],
+                            color: fishInfo['color'],
+                            description: fishInfo['description'],
+                            isSelected: _selectedFish == fishType,
+                          );
+                        },
+                      ),
+                    ),
+
+                    // 하단 버튼
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton(
+                        onPressed: _isCreating ? null : _createUser,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryPastel,
+                          disabledBackgroundColor: AppColors.textTertiary,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isCreating
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                '선택 완료',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
