@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../models/fish_model.dart';
+import '../shop/shop_screen.dart';
 
 /// 수족관 화면
 class AquariumScreen extends StatelessWidget {
@@ -150,7 +151,7 @@ class AquariumScreen extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.store),
-            label: 'Store',
+            label: 'Shop',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.menu),
@@ -162,6 +163,12 @@ class AquariumScreen extends StatelessWidget {
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           // Handle navigation logic here
+          if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ShopScreen()),
+            );
+          }
         },
       ),
     );

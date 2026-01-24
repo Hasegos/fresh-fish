@@ -54,6 +54,11 @@ class BottomNavigation extends StatelessWidget {
               ),
               _buildNavItem(
                 index: 4,
+                icon: Icons.store,
+                label: 'Shop',
+              ),
+              _buildNavItem(
+                index: 5,
                 icon: Icons.menu,
                 label: 'Menu',
               ),

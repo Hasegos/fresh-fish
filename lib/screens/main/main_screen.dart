@@ -4,6 +4,7 @@ import '../timer/timer_screen.dart';
 import '../quests/quests_screen.dart';
 import '../calendar/calendar_screen.dart';
 import '../settings/settings_screen.dart';
+import '../shop/shop_screen.dart';
 import '../../widgets/bottom_navigation.dart';
 
 /// 메인 화면 (하단 네비게이션 포함)
@@ -29,6 +30,7 @@ class _MainScreenState extends State<MainScreen> {
       const QuestsScreen(),
       const TimerScreen(),
       const CalendarScreen(),
+      const ShopScreen(),
       const SettingsScreen(),
     ];
   }
