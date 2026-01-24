@@ -81,8 +81,10 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    // Fish Icon
-                    Icon(Icons.fish, color: Colors.blueAccent, size: 32),
+                    // [수정된 부분] Icons.fish -> Icons.set_meal 로 변경
+                    // Material 아이콘에는 fish가 없어서 가장 비슷한 set_meal(접시 위의 생선) 사용
+                    const Icon(Icons.set_meal, color: Colors.blueAccent, size: 32),
+                    
                     const SizedBox(width: 8),
 
                     // Level Bar
@@ -90,13 +92,13 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
                       child: LinearProgressIndicator(
                         value: 0.5, // Example value
                         backgroundColor: Colors.white,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
                       ),
                     ),
                     const SizedBox(width: 8),
 
                     // Coin Text
-                    Text(
+                    const Text(
                       '100', // Example coin value
                       style: TextStyle(
                         fontSize: 16,
@@ -164,7 +166,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
                           const SizedBox(height: 16),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
+                            child: const LinearProgressIndicator(
                               value: 0.67,
                               minHeight: 8,
                               backgroundColor: AppColors.borderLight,
@@ -258,7 +260,6 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
       child: GestureDetector(
         onTap: () => setState(() => _selectedFish = fishType),
         child: Container(
-          // [핵심 수정] Container 내부에 여백(padding)을 추가함
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: isSelected ? color.withOpacity(0.1) : AppColors.surface,
@@ -270,7 +271,7 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
           ),
           child: Row(
             children: [
-              // 물고기 이모지 (사이즈 고정 및 여백 조절)
+              // 물고기 이모지
               SizedBox(
                 width: 60,
                 child: Center(child: Text(emoji, style: const TextStyle(fontSize: 40))),
