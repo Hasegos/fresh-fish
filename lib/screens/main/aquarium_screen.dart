@@ -6,7 +6,6 @@ import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
 import '../../models/quest_model.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/bottom_navigation.dart';
 
 /// 메인 어항 화면 - 새로운 아키텍처
 class AquariumScreen extends StatefulWidget {
@@ -141,19 +140,6 @@ class _AquariumScreenState extends State<AquariumScreen>
                 ],
               ),
 
-              // Bottom Navigation
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: BottomNavigation(
-                  currentIndex: 0,
-                  onTap: (index) {
-                    if (index == 0) return;
-                    widget.onNavChanged?.call(index);
-                  },
-                ),
-              ),
             ],
           );
         },
