@@ -102,6 +102,7 @@ class QuestUtils {
     required Difficulty difficulty,
     String? dueDate,
     String? dueTime,
+    required String description, // Added description parameter
   }) {
     return ToDo(
       id: _uuid.v4(),
@@ -114,6 +115,7 @@ class QuestUtils {
       goldReward: getGoldReward(difficulty),
       difficulty: difficulty,
       createdAt: DateTime.now().millisecondsSinceEpoch,
+      description: description, // Pass description to ToDo constructor
     );
   }
 

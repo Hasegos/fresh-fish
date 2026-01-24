@@ -219,6 +219,7 @@ class ToDo {
   final int goldReward;
   final Difficulty difficulty;
   final int createdAt;
+  final String description;
 
   ToDo({
     required this.id,
@@ -231,6 +232,7 @@ class ToDo {
     required this.goldReward,
     required this.difficulty,
     required this.createdAt,
+    required this.description,
   });
 
   factory ToDo.fromJson(Map<String, dynamic> json) {
@@ -248,6 +250,7 @@ class ToDo {
         orElse: () => Difficulty.normal,
       ),
       createdAt: json['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      description: json['description'] as String,
     );
   }
 
@@ -263,6 +266,7 @@ class ToDo {
       'goldReward': goldReward,
       'difficulty': difficulty.name,
       'createdAt': createdAt,
+      'description': description,
     };
   }
 
@@ -277,6 +281,7 @@ class ToDo {
     int? goldReward,
     Difficulty? difficulty,
     int? createdAt,
+    String? description,
   }) {
     return ToDo(
       id: id ?? this.id,
@@ -289,6 +294,9 @@ class ToDo {
       goldReward: goldReward ?? this.goldReward,
       difficulty: difficulty ?? this.difficulty,
       createdAt: createdAt ?? this.createdAt,
+      description: description ?? this.description,
     );
   }
+
+  bool get isActive => !completed && (dueDate == null || DateTime.parse(dueDate!).isAfter(DateTime.now()));
 }
