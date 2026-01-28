@@ -51,6 +51,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // ✅ 구글 로그인 UI용 핸들러 (지금은 UI/흐름만)
+  Future<void> _onGoogleLogin() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      // TODO: Google Sign-In + FirebaseAuth 연결
+      await Future.delayed(const Duration(milliseconds: 700));
+
+      if (!mounted) return;
+      // 성공 시 메인으로
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AppScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('구글 로그인 실패: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _goSignup() {
     Navigator.push(
       context,
@@ -155,9 +179,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: Icons.lock_outline,
                               obscure: _obscure,
                               suffix: IconButton(
-                                onPressed: () => setState(() => _obscure = !_obscure),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
                                 icon: Icon(
-                                  _obscure ? Icons.visibility : Icons.visibility_off,
+                                  _obscure
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
                                   color: AppColors.textSecondary,
                                 ),
                               ),
@@ -186,17 +213,33 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 child: _isLoading
                                     ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
                                     : const Text(
-                                        '로그인',
-                                        style: TextStyle(fontWeight: FontWeight.w700),
-                                      ),
+                                  '로그인',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+
+                            // 여기부터 추가: "또는" + 구글 로그인 버튼
+                            const SizedBox(height: 14),
+                            const _OrDivider(text: '또는'),
+                            const SizedBox(height: 12),
+
+                            _SocialButton(
+                              onPressed: _isLoading ? null : _onGoogleLogin,
+                              label: 'Google로 계속하기',
+                              leading: Image.asset(
+                                'assets/images/google_logo.png',
+                                width: 20,
+                                height: 20,
                               ),
                             ),
 
@@ -206,13 +249,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: _isLoading
                                   ? null
                                   : () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('비밀번호 찾기(준비중)')),
-                                      );
-                                    },
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                      content: Text('비밀번호 찾기(준비중)')),
+                                );
+                              },
                               child: const Text(
                                 '비밀번호를 잊으셨나요?',
-                                style: TextStyle(color: AppColors.textSecondary),
+                                style:
+                                TextStyle(color: AppColors.textSecondary),
                               ),
                             ),
                           ],
@@ -304,6 +350,76 @@ class _Input extends StatelessWidget {
       ),
       validator: validator,
       onFieldSubmitted: onSubmitted,
+    );
+  }
+}
+
+// ✅ "또는" 구분선 위젯
+class _OrDivider extends StatelessWidget {
+  final String text;
+  const _OrDivider({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(color: Colors.white.withOpacity(0.18), height: 1),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            text,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+        Expanded(
+          child: Divider(color: Colors.white.withOpacity(0.18), height: 1),
+        ),
+      ],
+    );
+  }
+}
+
+// ✅ 소셜 로그인 버튼(구글 등) 공용 UI
+class _SocialButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final String label;
+  final Widget leading;
+
+  const _SocialButton({
+    required this.onPressed,
+    required this.label,
+    required this.leading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white.withOpacity(0.12),
+          foregroundColor: AppColors.textPrimary,
+          side: BorderSide(color: Colors.white.withOpacity(0.18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            leading,
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
