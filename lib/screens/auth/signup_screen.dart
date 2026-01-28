@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import 'login_screen.dart';
@@ -13,17 +13,25 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
+  final _emailCodeCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
   final _pwConfirmCtrl = TextEditingController();
+  final _nicknameCtrl = TextEditingController();
+  final _ageCtrl = TextEditingController();
 
   bool _obscure = true;
   bool _isLoading = false;
+  Gender _gender = Gender.none;
+  bool _ageNotSelected = false;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
+    _emailCodeCtrl.dispose();
     _pwCtrl.dispose();
     _pwConfirmCtrl.dispose();
+    _nicknameCtrl.dispose();
+    _ageCtrl.dispose();
     super.dispose();
   }
 
@@ -95,7 +103,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           const SizedBox(height: 14),
                           const Text(
-                            'Create Account',
+                            '회원가입',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -135,12 +143,45 @@ class _SignupScreenState extends State<SignupScreen> {
                               hint: 'example@email.com',
                               icon: Icons.mail_outline,
                               keyboardType: TextInputType.emailAddress,
+                              suffix: TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('인증번호 발송(준비중)')),
+                                        );
+                                      },
+                                child: const Text('인증번호 발송'),
+                              ),
                               validator: (v) {
                                 final value = (v ?? '').trim();
-                                if (value.isEmpty) return '이메일을 입력해줘';
+                                if (value.isEmpty) return '이메일을 입력하세요';
                                 if (!value.contains('@')) {
-                                  return '이메일 형식이 맞지 않아';
+                                  return '올바른 이메일 형식이 아닙니다';
                                 }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _Input(
+                              controller: _emailCodeCtrl,
+                              label: '이메일 인증',
+                              hint: '인증번호 입력',
+                              icon: Icons.verified_outlined,
+                              keyboardType: TextInputType.number,
+                              suffix: TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('이메일 인증(준비중)')),
+                                        );
+                                      },
+                                child: const Text('인증하기'),
+                              ),
+                              validator: (v) {
+                                final value = (v ?? '').trim();
+                                if (value.isEmpty) return '인증번호를 입력하세요';
                                 return null;
                               },
                             ),
@@ -160,7 +201,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                               validator: (v) {
                                 final value = v ?? '';
-                                if (value.isEmpty) return '비밀번호를 입력해줘';
+                                if (value.isEmpty) return '비밀번호를 입력하세요';
                                 if (value.length < 6) return '비밀번호는 6자 이상';
                                 return null;
                               },
@@ -174,13 +215,82 @@ class _SignupScreenState extends State<SignupScreen> {
                               obscure: _obscure,
                               validator: (v) {
                                 final value = v ?? '';
-                                if (value.isEmpty) return '비밀번호 확인을 입력해줘';
+                                if (value.isEmpty) return '비밀번호 확인을 입력하세요';
                                 if (value != _pwCtrl.text) {
-                                  return '비밀번호가 일치하지 않아';
+                                  return '비밀번호가 일치하지 않습니다';
                                 }
                                 return null;
                               },
                               onSubmitted: (_) => _onSignup(),
+                            ),
+                            const SizedBox(height: 12),
+                            _Input(
+                              controller: _nicknameCtrl,
+                              label: '닉네임',
+                              hint: '사용할 닉네임',
+                              icon: Icons.person_outline,
+                              suffix: TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('닉네임 중복체크(준비중)')),
+                                        );
+                                      },
+                                child: const Text('중복체크'),
+                              ),
+                              validator: (v) {
+                                final value = (v ?? '').trim();
+                                if (value.isEmpty) return '닉네임을 입력하세요';
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _Input(
+                                    controller: _ageCtrl,
+                                    label: '나이',
+                                    hint: '예: 25',
+                                    icon: Icons.cake_outlined,
+                                    keyboardType: TextInputType.number,
+                                    enabled: !_ageNotSelected,
+                                    validator: (v) {
+                                      if (_ageNotSelected) return null;
+                                      final value = (v ?? '').trim();
+                                      if (value.isEmpty) return '나이를 입력하세요';
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  children: [
+                                    const Text(
+                                      '선택 안 함',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: _ageNotSelected,
+                                      onChanged: (v) {
+                                        setState(() {
+                                          _ageNotSelected = v;
+                                          if (v) _ageCtrl.clear();
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _GenderSelector(
+                              value: _gender,
+                              onChanged: (next) => setState(() => _gender = next),
                             ),
 
                             const SizedBox(height: 16),
@@ -251,6 +361,7 @@ class _Input extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscure;
   final Widget? suffix;
+  final bool enabled;
   final String? Function(String?)? validator;
   final void Function(String)? onSubmitted;
 
@@ -262,6 +373,7 @@ class _Input extends StatelessWidget {
     this.keyboardType,
     this.obscure = false,
     this.suffix,
+    this.enabled = true,
     this.validator,
     this.onSubmitted,
   });
@@ -272,6 +384,7 @@ class _Input extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscure,
+      enabled: enabled,
       style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
@@ -293,6 +406,115 @@ class _Input extends StatelessWidget {
       ),
       validator: validator,
       onFieldSubmitted: onSubmitted,
+    );
+  }
+}
+
+enum Gender { male, female, none }
+
+class _GenderSelector extends StatelessWidget {
+  final Gender value;
+  final ValueChanged<Gender> onChanged;
+
+  const _GenderSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  String _label(Gender g) {
+    switch (g) {
+      case Gender.male:
+        return '남자';
+      case Gender.female:
+        return '여자';
+      case Gender.none:
+        return '선택 안 함';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '성별',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              _GenderChip(
+                label: _label(Gender.male),
+                selected: value == Gender.male,
+                onTap: () => onChanged(Gender.male),
+              ),
+              const SizedBox(width: 8),
+              _GenderChip(
+                label: _label(Gender.female),
+                selected: value == Gender.female,
+                onTap: () => onChanged(Gender.female),
+              ),
+              const SizedBox(width: 8),
+              _GenderChip(
+                label: _label(Gender.none),
+                selected: value == Gender.none,
+                onTap: () => onChanged(Gender.none),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenderChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _GenderChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.secondary : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected
+                  ? AppColors.secondary
+                  : Colors.white.withOpacity(0.24),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

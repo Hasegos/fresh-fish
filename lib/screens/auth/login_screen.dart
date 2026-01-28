@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: FirebaseAuth ??? ??
+      // TODO: FirebaseAuth 로그인 연결
       await Future.delayed(const Duration(milliseconds: 700));
 
       if (!mounted) return;
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('??? ??: $e')),
+        SnackBar(content: Text('로그인 실패: $e')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -93,12 +93,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: const Center(
-                              child: Text('?', style: TextStyle(fontSize: 44)),
+                              child: Text('갓', style: TextStyle(fontSize: 44)),
                             ),
                           ),
                           const SizedBox(height: 14),
                           const Text(
-                            '???',
+                            '갓생어',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            '?? ??? ??',
+                            '갓생을 시작해요',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -134,15 +134,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             _Input(
                               controller: _emailCtrl,
-                              label: '???',
+                              label: '이메일',
                               hint: 'example@email.com',
                               icon: Icons.mail_outline,
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) {
                                 final value = (v ?? '').trim();
-                                if (value.isEmpty) return '???? ????';
+                                if (value.isEmpty) return '이메일을 입력하세요';
                                 if (!value.contains('@')) {
-                                  return '??? ??? ?? ??';
+                                  return '올바른 이메일 형식이 아닙니다';
                                 }
                                 return null;
                               },
@@ -150,8 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 12),
                             _Input(
                               controller: _pwCtrl,
-                              label: '????',
-                              hint: '6? ??',
+                              label: '비밀번호',
+                              hint: '6자 이상',
                               icon: Icons.lock_outline,
                               obscure: _obscure,
                               suffix: IconButton(
@@ -163,8 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               validator: (v) {
                                 final value = v ?? '';
-                                if (value.isEmpty) return '????? ????';
-                                if (value.length < 6) return '????? 6? ??';
+                                if (value.isEmpty) return '비밀번호를 입력하세요';
+                                if (value.length < 6) return '비밀번호는 6자 이상';
                                 return null;
                               },
                               onSubmitted: (_) => _onLogin(),
@@ -194,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       )
                                     : const Text(
-                                        '???',
+                                        '로그인',
                                         style: TextStyle(fontWeight: FontWeight.w700),
                                       ),
                               ),
@@ -207,11 +207,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ? null
                                   : () {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('???? ??(??)')),
+                                        const SnackBar(content: Text('비밀번호 찾기(준비중)')),
                                       );
                                     },
                               child: const Text(
-                                '????? ??????',
+                                '비밀번호를 잊으셨나요?',
                                 style: TextStyle(color: AppColors.textSecondary),
                               ),
                             ),
@@ -226,12 +226,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
-                          '??? ????',
+                          '계정이 없으신가요?',
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
                         TextButton(
                           onPressed: _isLoading ? null : _goSignup,
-                          child: const Text('????'),
+                          child: const Text('회원가입'),
                         ),
                       ],
                     ),
@@ -240,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: _isLoading ? null : _goDevMain,
-                        child: const Text('DEV: ?? ???? ??'),
+                        child: const Text('DEV: 개발자용'),
                       ),
                     ),
                   ],
