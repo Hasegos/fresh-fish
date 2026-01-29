@@ -149,6 +149,23 @@ class _AquariumScreenState extends State<AquariumScreen>
 
   Widget _buildAquariumSection(BuildContext context, UserData userData) {
     final fish = userData.fish;
+    final placedDecorations = userData.decorations;
+    final decorationMap = <String, dynamic>{
+      'seaweed1': {'icon': '🌿', 'name': '갈조류'},
+      'seaweed2': {'icon': '🪴', 'name': '초록 해초'},
+      'kelp': {'icon': '🌱', 'name': '다시마'},
+      'kelp_forest': {'icon': '🌲', 'name': '다시마 숲'},
+      'small_rock': {'icon': '🪨', 'name': '작은 돌'},
+      'big_rock': {'icon': '🗿', 'name': '큰 바위'},
+      'coral_pink': {'icon': '🪸', 'name': '핑크 산호'},
+      'coral_red': {'icon': '🦞', 'name': '빨간 산호'},
+      'shell': {'icon': '🐚', 'name': '조개껍데기'},
+      'starfish': {'icon': '⭐', 'name': '불가사리'},
+      'starfish_big': {'icon': '🌟', 'name': '큰 불가사리'},
+      'treasure': {'icon': '💎', 'name': '보물상자'},
+      'anchor': {'icon': '⚓', 'name': '앵커'},
+      'castle': {'icon': '🏰', 'name': '해저 성'},
+    };
 
     return Container(
       decoration: BoxDecoration(
@@ -170,48 +187,32 @@ class _AquariumScreenState extends State<AquariumScreen>
             child: _buildHUD(context, fish, userData.gold),
           ),
 
-          // Aquarium with animated fish
+          // Aquarium with animated fish and decorations
           Center(
             child: GestureDetector(
               onTap: _onFishTapped,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Aquarium background
-                  Container(
-                    width: 280,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.primaryPastel.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-
-                  // Animated fish
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 100),
-                    left: _fishPosition.dx,
-                    top: _fishPosition.dy,
-                    child: GestureDetector(
-                      onTap: _onFishTapped,
-                      child: Text(
-                        fish.type.emoji,
-                        style: const TextStyle(fontSize: 60),
-                      ),
-                    ),
-                  ),
-
-                  // Speech bubble
-                  if (_showMessage)
-                    Positioned(
-                      top: 20,
-                      child: _buildSpeechBubble(_displayedMessage ?? ""),
-                    ),
-                ],
+              child: _AquariumWidget(
+                width: 280,
+                height: 200,
+                fish: fish,
+                fishPosition: _fishPosition,
+                placedDecorations: placedDecorations,
+                decorationMap: decorationMap,
+                onFishTap: _onFishTapped,
+                showMessage: _showMessage,
+                message: _displayedMessage ?? "",
+                onDecorationPositionChanged: (placedDecoration, newX, newY) {
+                  final provider = context.read<UserDataProvider>();
+                  provider.updateUserData((data) {
+                    final updatedDecorations = data.decorations.map((d) {
+                      if (d.decorationId == placedDecoration.decorationId) {
+                        return d.copyWith(x: newX, y: newY);
+                      }
+                      return d;
+                    }).toList();
+                    return data.copyWith(decorations: updatedDecorations);
+                  });
+                },
               ),
             ),
           ),
@@ -270,10 +271,10 @@ class _AquariumScreenState extends State<AquariumScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.highlightPink.withOpacity(0.15),
+            color: AppColors.highlightPink.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.highlightPink.withOpacity(0.3),
+              color: AppColors.highlightPink.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -304,7 +305,7 @@ class _AquariumScreenState extends State<AquariumScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -380,7 +381,7 @@ class _AquariumScreenState extends State<AquariumScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       itemCount: activeTodos.length,
       itemBuilder: (context, index) {
         final todo = activeTodos[index];
@@ -391,8 +392,8 @@ class _AquariumScreenState extends State<AquariumScreen>
 
   Widget _buildTodoCard(Quest quest) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -401,7 +402,7 @@ class _AquariumScreenState extends State<AquariumScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -411,13 +412,13 @@ class _AquariumScreenState extends State<AquariumScreen>
         children: [
           Container(
             width: 4,
-            height: 40,
+            height: 36,
             decoration: BoxDecoration(
               color: _getDifficultyColor(quest.difficulty),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,7 +448,7 @@ class _AquariumScreenState extends State<AquariumScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.accentPastel.withOpacity(0.1),
+              color: AppColors.accentPastel.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -484,5 +485,167 @@ class _AquariumScreenState extends State<AquariumScreen>
       case Difficulty.hard:
         return '어려움';
     }
+  }
+}
+
+// ============ 수족관 위젯 (장식 드래그 포함) ============
+class _AquariumWidget extends StatefulWidget {
+  final double width;
+  final double height;
+  final Fish fish;
+  final Offset fishPosition;
+  final List<PlacedDecoration> placedDecorations;
+  final Map<String, dynamic> decorationMap;
+  final VoidCallback onFishTap;
+  final bool showMessage;
+  final String message;
+  final Function(PlacedDecoration, double, double) onDecorationPositionChanged;
+
+  const _AquariumWidget({
+    required this.width,
+    required this.height,
+    required this.fish,
+    required this.fishPosition,
+    required this.placedDecorations,
+    required this.decorationMap,
+    required this.onFishTap,
+    required this.showMessage,
+    required this.message,
+    required this.onDecorationPositionChanged,
+  });
+
+  @override
+  State<_AquariumWidget> createState() => _AquariumWidgetState();
+}
+
+class _AquariumWidgetState extends State<_AquariumWidget> {
+  late Map<String, Offset> decorationOffsets;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeOffsets();
+  }
+
+  void _initializeOffsets() {
+    decorationOffsets = {};
+    for (final placed in widget.placedDecorations) {
+      decorationOffsets[placed.decorationId] = 
+          Offset(placed.x * widget.width, placed.y * widget.height);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_AquariumWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.placedDecorations.length != widget.placedDecorations.length) {
+      _initializeOffsets();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // 수족관 배경
+        Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.primaryPastel.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+        ),
+
+        // 드래그 가능한 장식들
+        ...widget.placedDecorations.map((placed) {
+          final icon = widget.decorationMap[placed.decorationId]?['icon'] ?? '🎁';
+          final offset = decorationOffsets[placed.decorationId] ?? 
+              Offset(placed.x * widget.width, placed.y * widget.height);
+
+          return Positioned(
+            left: offset.dx,
+            top: offset.dy,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                // 현재 저장된 offset 값에서 새 위치 계산
+                final currentOffset = decorationOffsets[placed.decorationId] ?? offset;
+                final newOffset = currentOffset + details.delta;
+                final clampedX = newOffset.dx.clamp(0.0, widget.width);
+                final clampedY = newOffset.dy.clamp(0.0, widget.height);
+                
+                // 실시간으로 부드럽게 업데이트
+                setState(() {
+                  decorationOffsets[placed.decorationId] = Offset(clampedX, clampedY);
+                });
+              },
+              onPanEnd: (details) {
+                // 드래그 종료 후 데이터 저장
+                final finalOffset = decorationOffsets[placed.decorationId]!;
+                widget.onDecorationPositionChanged(
+                  placed,
+                  finalOffset.dx / widget.width,
+                  finalOffset.dy / widget.height,
+                );
+              },
+              child: Transform.translate(
+                offset: Offset(-12, -12), // 중심 정렬
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.grab,
+                  child: Text(
+                    icon,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+
+        // 물고기
+        Positioned(
+          left: widget.fishPosition.dx,
+          top: widget.fishPosition.dy,
+          child: GestureDetector(
+            onTap: widget.onFishTap,
+            child: Text(
+              widget.fish.type.emoji,
+              style: const TextStyle(fontSize: 60),
+            ),
+          ),
+        ),
+
+        // 메시지 버블
+        if (widget.showMessage)
+          Positioned(
+            top: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: Text(
+                widget.message,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

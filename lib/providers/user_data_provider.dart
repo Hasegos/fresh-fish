@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
+import '../models/skin_model.dart';
 import '../services/storage_service.dart';
 
 /// 사용자 데이터 상태 관리 Provider
@@ -22,7 +23,7 @@ class UserDataProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners(); // 로딩 시작 알림
 
-    print("🚀 [Provider LOG 1] 데이터 로딩 시작...");
+    debugPrint("🚀 [Provider LOG 1] 데이터 로딩 시작...");
     try {
       _userData = await _storageService.getUserData().timeout(
         const Duration(seconds: 3),
@@ -31,16 +32,16 @@ class UserDataProvider extends ChangeNotifier {
           return null;
         },
       );
-      print("🚀 [Provider LOG 2] 데이터 로딩 성공: ${_userData != null}");
+      debugPrint("🚀 [Provider LOG 2] 데이터 로딩 성공: ${_userData != null}");
     } catch (e) {
-      print("❌ [Provider ERROR] 로딩 중 에러 발생: $e");
+      debugPrint("❌ [Provider ERROR] 로딩 중 에러 발생: $e");
       debugPrint('Error loading user data: $e');
       _userData = null;
     }
 
     _isLoading = false;
     notifyListeners(); // 로딩 종료 알림
-    print("🚀 [Provider LOG 3] 초기화 프로세스 종료");
+    debugPrint("🚀 [Provider LOG 3] 초기화 프로세스 종료");
   }
 
   /// 사용자 데이터 새로고침
@@ -129,7 +130,7 @@ class UserDataProvider extends ChangeNotifier {
 
     // 1. 골드 부족 여부 체크
     if (_userData!.gold < price) {
-      print("❌ 골드가 부족하여 구매할 수 없습니다.");
+      debugPrint("❌ 골드가 부족하여 구매할 수 없습니다.");
       return false;
     }
 
@@ -141,11 +142,90 @@ class UserDataProvider extends ChangeNotifier {
       ownedDecorations: updatedOwned,
     ));
 
-    print("✅ 장식 구매 성공: $decorationId");
+    debugPrint("✅ 장식 구매 성공: $decorationId");
     return true;
   }
 
-  // 👇 [새로 추가된 메서드 2: 메인으로 이동]
+  // 👇 [새로 추가된 메서드 2: 스킨 구매]
+  /// [Why] 상점에서 스킨을 구매할 때 골드를 차감하고 소유 목록에 추가하기 위해 필요합니다.
+  Future<bool> purchaseSkin(Skin skin) async {
+    if (_userData == null) return false;
+
+    final skinId = skin.id;
+    final skinCost = skin.cost;
+
+    // 1. 골드 부족 여부 체크
+    if (_userData!.gold < skinCost) {
+      debugPrint("❌ 골드가 부족하여 구매할 수 없습니다.");
+      return false;
+    }
+
+    // 2. 소유 목록 업데이트 및 골드 차감
+    final updatedOwned = <String>[..._userData!.ownedSkins, skinId];
+
+    await updateUserData((data) => data.copyWith(
+      gold: data.gold - skinCost,
+      ownedSkins: updatedOwned,
+    ));
+
+    debugPrint("✅ 스킨 구매 성공: $skinId");
+    return true;
+  }
+
+  // 👇 [새로 추가된 메서드 3: 스킨 적용]
+  /// [Why] 보유한 스킨을 활성화하기 위해 필요합니다.
+  /// 기존 물고기의 스킨(타입)만 변경합니다.
+  Future<void> setActiveSkin(String skinId) async {
+    if (_userData == null) return;
+
+    // 소유한 스킨인지 확인
+    if (!_userData!.ownedSkins.contains(skinId)) {
+      debugPrint("❌ 소유하지 않은 스킨입니다.");
+      return;
+    }
+
+    // 스킨 ID로부터 물고기 타입 결정
+    final fishType = _getFishTypeFromSkinId(skinId);
+    
+    // 기존 물고기를 새 타입으로 변경
+    final updatedFish = _userData!.fish.copyWith(type: fishType);
+
+    await updateUserData((data) => data.copyWith(
+      activeSkinId: skinId,
+      fish: updatedFish,
+    ));
+
+    debugPrint("✅ 스킨 적용 성공: $skinId, 물고기 타입: $fishType");
+  }
+
+  /// 스킨 ID로부터 물고기 타입을 결정합니다.
+  /// 각 스킨은 특정 물고기 타입으로 변환됩니다.
+  FishType _getFishTypeFromSkinId(String skinId) {
+    switch (skinId) {
+      case 'skin_default':
+        return FishType.goldfish;
+      case 'skin_goldfish':
+        return FishType.goldfish;
+      case 'skin_stripedfish':
+        return FishType.bluefish;
+      case 'skin_neonparty':
+        return FishType.tropical;
+      case 'skin_oceanboss':
+        return FishType.dolphin;
+      case 'skin_phoenix':
+        return FishType.redfish;
+      case 'skin_crystal':
+        return FishType.clownfish;
+      case 'skin_galaxy':
+        return FishType.tropical;
+      case 'skin_dragon':
+        return FishType.dolphin;
+      default:
+        return FishType.goldfish;
+    }
+  }
+
+  // 👇 [새로 추가된 메서드 4: 메인으로 이동]
   /// [Why] 화면의 뒤로가기 버튼 등을 눌렀을 때 상태를 관리하거나 알림을 주기 위해 사용합니다.
   void backToMain() {
     // 현재는 알림(notifyListeners)만 주지만,

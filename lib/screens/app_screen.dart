@@ -114,6 +114,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         customRewards: [],
         decorations: [],
         ownedDecorations: [],
+        ownedSkins: ['skin_default'],
+        activeSkinId: 'skin_default',
         timerSessions: [],
       );
 

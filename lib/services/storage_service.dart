@@ -90,7 +90,7 @@ class StorageService {
         maxHp: 100,
         eggHatchedAt: now.millisecondsSinceEpoch,
       ),
-      gold: 0,
+      gold: 3000,
       currentDate: dateString,
       quests: _generateInitialQuests(selectedCategories, dateString),
       habits: [],
@@ -103,6 +103,8 @@ class StorageService {
       customRewards: [],
       decorations: [],
       ownedDecorations: [],
+      ownedSkins: ['skin_default'],
+      activeSkinId: 'skin_default',
       timerSessions: [],
     );
   }
