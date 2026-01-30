@@ -9,6 +9,40 @@ class AppProvider extends ChangeNotifier {
   UserData? _userData;
   bool _isLoading = true;
 
+  // -------------------------
+  // 알림 모드 설정 (임시: 앱 재실행 시 초기화됨)
+  // -------------------------
+  bool notifSound = true;       // 소리
+  bool notifVibration = false;  // 진동
+  bool notifSilent = false;     // 무음
+
+  void setNotifSound(bool v) {
+    notifSound = v;
+    if (v) {
+      notifVibration = false;
+      notifSilent = false;
+    }
+    notifyListeners();
+  }
+
+  void setNotifVibration(bool v) {
+    notifVibration = v;
+    if (v) {
+      notifSound = false;
+      notifSilent = false;
+    }
+    notifyListeners();
+  }
+
+  void setNotifSilent(bool v) {
+    notifSilent = v;
+    if (v) {
+      notifSound = false;
+      notifVibration = false;
+    }
+    notifyListeners();
+  }
+
   UserData? get userData => _userData;
   bool get isLoading => _isLoading;
   bool get isOnboardingComplete => _userData?.onboardingCompleted ?? false;

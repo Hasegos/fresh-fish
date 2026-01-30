@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/app_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
@@ -11,6 +12,8 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.watch<AppProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -54,8 +57,8 @@ class SettingsScreen extends StatelessWidget {
                           context,
                           icon: Icons.notifications,
                           title: '알림 설정',
-                          subtitle: '퀘스트 알림 시간 설정',
-                          onTap: () => _showComingSoon(context),
+                          subtitle: _notifModeLabel(p),
+                          onTap: () => _openNotifModeSheet(context),
                         ),
                         _buildSettingTile(
                           context,
@@ -136,6 +139,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  // -------------------------
+  // UI Helpers
+  // -------------------------
+
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -163,13 +170,13 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSettingTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required VoidCallback onTap,
+        bool isDestructive = false,
+      }) {
     final color = isDestructive ? AppColors.highlightPink : AppColors.secondaryPastel;
 
     return InkWell(
@@ -210,7 +217,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right,
               color: AppColors.textTertiary,
             ),
@@ -219,6 +226,121 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  // -------------------------
+  // 알림 모드 (소리/진동/무음)
+  // -------------------------
+
+  String _notifModeLabel(AppProvider p) {
+    // 우선순위: 무음 > 진동 > 소리
+    if (p.notifSilent == true) return '현재: 무음';
+    if (p.notifVibration == true) return '현재: 진동';
+    if (p.notifSound == true) return '현재: 소리';
+    return '현재: 무음';
+  }
+
+  void _openNotifModeSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '알림 모드',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '앱 알림이 울릴 때 소리/진동/무음을 선택해요',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                Consumer<AppProvider>(
+                  builder: (context, p, _) {
+                    final selected = p.notifSilent == true
+                        ? 'silent'
+                        : (p.notifVibration == true ? 'vibrate' : 'sound');
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _ModeBox(
+                            title: '소리',
+                            icon: Icons.volume_up,
+                            selected: selected == 'sound',
+                            onTap: () {
+                              // 소리 모드
+                              p.setNotifSilent(false);
+                              p.setNotifVibration(false);
+                              p.setNotifSound(true);
+                              Navigator.pop(sheetContext);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _ModeBox(
+                            title: '진동',
+                            icon: Icons.vibration,
+                            selected: selected == 'vibrate',
+                            onTap: () {
+                              // 진동 모드
+                              p.setNotifSilent(false);
+                              p.setNotifSound(false);
+                              p.setNotifVibration(true);
+                              Navigator.pop(sheetContext);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _ModeBox(
+                            title: '무음',
+                            icon: Icons.notifications_off,
+                            selected: selected == 'silent',
+                            onTap: () {
+                              // 무음 모드
+                              p.setNotifSilent(true);
+                              p.setNotifSound(false);
+                              p.setNotifVibration(false);
+                              Navigator.pop(sheetContext);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 14),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // -------------------------
+  // Dialogs / Snackbars
+  // -------------------------
 
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -240,9 +362,7 @@ class SettingsScreen extends StatelessWidget {
             SizedBox(width: 12),
             Text(
               'My Tiny Aquarium',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-              ),
+              style: TextStyle(color: AppColors.textPrimary),
             ),
           ],
         ),
@@ -252,14 +372,12 @@ class SettingsScreen extends StatelessWidget {
           children: [
             const Text(
               '버전: 1.0.0',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-              ),
+              style: TextStyle(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               '나만의 작은 수족관에서 물고기를 키우며 생산적인 하루를 만들어보세요.',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),
@@ -271,9 +389,7 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text(
               '확인',
-              style: TextStyle(
-                color: AppColors.primaryPastel,
-              ),
+              style: TextStyle(color: AppColors.primaryPastel),
             ),
           ),
         ],
@@ -286,42 +402,28 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(
-              Icons.warning,
-              color: AppColors.highlightPink,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '데이터 초기화',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Icon(Icons.warning, color: AppColors.highlightPink),
+            SizedBox(width: 12),
+            Text('데이터 초기화', style: TextStyle(color: AppColors.textPrimary)),
           ],
         ),
         content: const Text(
           '모든 데이터가 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.\n\n정말 초기화하시겠습니까?',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text(
               '취소',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
-
-              // 데이터 초기화
               await context.read<AppProvider>().reset();
 
               if (!context.mounted) return;
@@ -339,6 +441,62 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('초기화'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ModeBox extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ModeBox({
+    required this.title,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected
+        ? AppColors.primaryPastel.withOpacity(0.8)
+        : AppColors.borderLight;
+
+    final bg = selected
+        ? AppColors.primaryPastel.withOpacity(0.12)
+        : AppColors.surface;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 26,
+              color: selected ? AppColors.primaryPastel : AppColors.textSecondary,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
