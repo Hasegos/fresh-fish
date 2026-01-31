@@ -45,6 +45,7 @@ class Quest {
   final String category;
   final bool completed;
   final String date; // YYYY-MM-DD
+  final String? reminderTime; // HH:mm
   final int expReward;
   final int goldReward;
   final QuestType questType;
@@ -56,6 +57,7 @@ class Quest {
     required this.category,
     required this.completed,
     required this.date,
+    this.reminderTime,
     required this.expReward,
     required this.goldReward,
     required this.questType,
@@ -69,6 +71,7 @@ class Quest {
       category: json['category'] as String,
       completed: json['completed'] as bool? ?? false,
       date: json['date'] as String,
+      reminderTime: json['reminderTime'] as String?,
       expReward: json['expReward'] as int? ?? 0,
       goldReward: json['goldReward'] as int? ?? 0,
       questType: QuestType.values.firstWhere(
@@ -89,6 +92,7 @@ class Quest {
       'category': category,
       'completed': completed,
       'date': date,
+      'reminderTime': reminderTime,
       'expReward': expReward,
       'goldReward': goldReward,
       'questType': questType.name,
@@ -102,6 +106,7 @@ class Quest {
     String? category,
     bool? completed,
     String? date,
+    String? reminderTime,
     int? expReward,
     int? goldReward,
     QuestType? questType,
@@ -113,6 +118,7 @@ class Quest {
       category: category ?? this.category,
       completed: completed ?? this.completed,
       date: date ?? this.date,
+      reminderTime: reminderTime ?? this.reminderTime,
       expReward: expReward ?? this.expReward,
       goldReward: goldReward ?? this.goldReward,
       questType: questType ?? this.questType,

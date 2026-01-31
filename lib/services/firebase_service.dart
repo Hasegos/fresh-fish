@@ -15,7 +15,10 @@ class FirebaseService {
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
   /// 현재 사용자 ID
-  String? get currentUserId => _auth.currentUser?.uid;
+  String? get currentUserId {
+    if (Firebase.apps.isEmpty) return null;
+    return _auth.currentUser?.uid;
+  }
 
   /// 익명 로그인
   Future<User?> signInAnonymously() async {
@@ -33,6 +36,7 @@ class FirebaseService {
 
   /// 사용자 데이터 저장
   Future<void> saveUserData(UserData userData) async {
+    if (Firebase.apps.isEmpty) return;
     if (currentUserId == null) {
       await signInAnonymously();
     }
@@ -52,6 +56,7 @@ class FirebaseService {
 
   /// 사용자 데이터 불러오기
   Future<UserData?> getUserData() async {
+    if (Firebase.apps.isEmpty) return null;
     if (currentUserId == null) {
       await signInAnonymously();
     }
@@ -77,6 +82,7 @@ class FirebaseService {
 
   /// 사용자 데이터 삭제
   Future<void> deleteUserData() async {
+    if (Firebase.apps.isEmpty) return;
     final uid = currentUserId;
     if (uid == null) return;
 
@@ -92,6 +98,7 @@ class FirebaseService {
 
   /// 실시간 동기화 (Stream)
   Stream<UserData?>? watchUserData() {
+    if (Firebase.apps.isEmpty) return null;
     final uid = currentUserId;
     if (uid == null) return null;
 

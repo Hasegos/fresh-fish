@@ -37,6 +37,7 @@ class QuestUtils {
     required Difficulty difficulty,
     QuestType type = QuestType.daily,
     String? customTitle,
+    String? reminderTime,
   }) {
     final title = customTitle ?? QuestTemplates.getRandomQuest(category);
 
@@ -46,6 +47,7 @@ class QuestUtils {
       category: category,
       completed: false,
       date: date,
+      reminderTime: reminderTime,
       expReward: getExpReward(difficulty),
       goldReward: getGoldReward(difficulty),
       questType: type,

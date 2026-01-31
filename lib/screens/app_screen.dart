@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/app_provider.dart';
+import '../providers/user_data_provider.dart';
 import '../models/fish_model.dart';
 import '../models/user_data_model.dart';
+import '../utils/quest_utils.dart';
 import 'onboarding/onboarding_screen.dart';
 import 'onboarding/category_selection_screen.dart';
 import 'onboarding/egg_selection_screen.dart';
@@ -98,12 +100,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       );
 
       // UserData 객체 생성
+      final todayStr = DateTime.now().toIso8601String().split('T')[0];
       final userData = UserData(
         id: userId,
         fish: fish,
         gold: 100,
-        currentDate: DateTime.now().toIso8601String().split('T')[0],
-        quests: [],
+        currentDate: todayStr,
+        quests: QuestUtils.generateDailyQuests(_selectedCategories, todayStr),
         habits: [],
         todos: [],
         history: [],
@@ -124,6 +127,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         final appProvider = context.read<AppProvider>();
         await appProvider.saveUserData(userData);
         debugPrint('💾 AppProvider에 UserData 저장 완료');
+        // Keep UserDataProvider in sync so quest creation works immediately.
+        await context.read<UserDataProvider>().saveUserData(userData);
+        debugPrint('💾 UserDataProvider에 UserData 저장 완료');
       }
     } catch (e) {
       debugPrint('❌ UserData 생성 오류: $e');
