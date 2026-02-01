@@ -53,8 +53,6 @@ class AchievementsScreen extends StatelessWidget {
               children: [
                 _buildProgressHeader(percentage, unlockedCount, totalCount),
                 const SizedBox(height: 24),
-                _buildStatsGrid(userData),
-                const SizedBox(height: 24),
                 const Text(
                   '업적 목록',
                   style: TextStyle(
@@ -126,49 +124,6 @@ class AchievementsScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // 통계 그리드
-  Widget _buildStatsGrid(dynamic userData) {
-    return Row(
-      children: [
-        _buildStatItem('레벨', '${userData.fish.level}', AppColors.accentPastel),
-        const SizedBox(width: 10),
-        _buildStatItem('골드', '${userData.gold}', AppColors.highlightPink),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
