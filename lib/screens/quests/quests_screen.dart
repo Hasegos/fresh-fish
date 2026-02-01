@@ -12,8 +12,6 @@ import '../../widgets/common/dialogs.dart'; // CommonDialogs.showInputDialog,
 import '../../models/models.dart'; // UserData, Quest, Habit, Difficulty,
 // Category, QuestsType 등 모델/enum.
 
-enum _QuestTimeAction { pick, clear, keep }
-
 //  ✅ QuestsScreen 위젯
 // 퀘스트/습관 목록 화면
 // StatelessWidth : 내부 상태 없이 Provider 상태 변화로만 리빌드
@@ -102,6 +100,8 @@ class QuestsScreen extends StatelessWidget {
   }
 
   List<String> _availableCategories(UserData userData) {
+    // 카테고리 선택값 우선
+    // 없으면 전체 카테고리 이름 목록
     if (userData.selectedCategories.isNotEmpty) {
       return userData.selectedCategories;
     }
@@ -251,25 +251,6 @@ class QuestsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              if (quest.reminderTime != null) ...[
-                const SizedBox(height: 6),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 48),
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryPastel.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '알림 ${quest.reminderTime!}',
-                      style: TextStyle(color: AppColors.secondaryPastel),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -384,7 +365,7 @@ class QuestsScreen extends StatelessWidget {
     if (!context.mounted) return;
     final rootContext = Navigator.of(context, rootNavigator: true).context;
     final title = await CommonDialogs.showInputDialog(
-      rootContext,
+      context,
       title: '퀘스트 추가',
       hint: '퀘스트 이름',
       confirmText: '추가',
@@ -394,7 +375,7 @@ class QuestsScreen extends StatelessWidget {
     if (title == null || title.trim().isEmpty) return;
 
     final category = await CommonDialogs.showChoiceDialog<String>(
-      rootContext,
+      context,
       title: '카테고리 선택',
       choices: categories.map((c) => ChoiceItem(label: c, value: c)).toList(),
     );
@@ -403,7 +384,7 @@ class QuestsScreen extends StatelessWidget {
     if (category == null) return;
 
     final difficulty = await CommonDialogs.showChoiceDialog<Difficulty>(
-      rootContext,
+      context,
       title: '난이도 선택',
       choices: Difficulty.values
           .map((d) => ChoiceItem(label: d.displayName, value: d))
@@ -413,19 +394,11 @@ class QuestsScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (difficulty == null) return;
 
-    final reminderTime = await _selectQuestReminderTime(
-      rootContext,
-      allowKeep: false,
-    );
-
-    if (!context.mounted) return;
-
     await provider.createQuest(
       title: title.trim(),
       category: category,
       difficulty: difficulty,
       questType: QuestType.sub,
-      reminderTime: reminderTime,
     );
   }
 
@@ -446,20 +419,7 @@ class QuestsScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (title == null || title.trim().isEmpty) return;
 
-    final reminderTime = await _selectQuestReminderTime(
-      rootContext,
-      currentTime: quest.reminderTime,
-      allowKeep: true,
-    );
-
-    if (!context.mounted) return;
-
-    await provider.updateQuest(
-      quest.copyWith(
-        title: title.trim(),
-        reminderTime: reminderTime,
-      ),
-    );
+    await provider.updateQuest(quest.copyWith(title: title.trim()));
   }
 
   Future<void> _deleteQuest(
@@ -489,7 +449,7 @@ class QuestsScreen extends StatelessWidget {
     if (!context.mounted) return;
     final rootContext = Navigator.of(context, rootNavigator: true).context;
     final result = await CommonDialogs.showBottomSheet<HabitFormResult>(
-      rootContext,
+      context,
       child: HabitFormSheet(
         habit: habit,
         categories: categories,
@@ -531,69 +491,6 @@ class QuestsScreen extends StatelessWidget {
 
     if (!context.mounted || !ok) return;
     await provider.deleteHabit(habit.id);
-  }
-
-  TimeOfDay? _parseTimeOfDay(String? time) {
-    if (time == null || time.isEmpty) return null;
-    final parts = time.split(':');
-    if (parts.length != 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null) return null;
-    return TimeOfDay(hour: hour, minute: minute);
-  }
-
-  String _formatTimeOfDay(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  Future<String?> _selectQuestReminderTime(
-      BuildContext context, {
-        String? currentTime,
-        required bool allowKeep,
-      }) async {
-    final choices = <ChoiceItem<_QuestTimeAction>>[];
-    if (allowKeep) {
-      choices.add(ChoiceItem(
-        label: '그대로 유지',
-        value: _QuestTimeAction.keep,
-      ));
-    }
-    choices.add(ChoiceItem(
-      label: allowKeep ? '시간 변경' : '시간 선택',
-      value: _QuestTimeAction.pick,
-    ));
-    choices.add(ChoiceItem(
-      label: allowKeep ? '시간 삭제' : '설정 안 함',
-      value: _QuestTimeAction.clear,
-    ));
-
-    final action = await CommonDialogs.showChoiceDialog<_QuestTimeAction>(
-      context,
-      title: '알림 시간',
-      choices: choices,
-    );
-
-    if (action == null) return allowKeep ? currentTime : null;
-
-    if (action == _QuestTimeAction.keep) {
-      return currentTime;
-    }
-
-    if (action == _QuestTimeAction.clear) {
-      return null;
-    }
-
-    final initialTime = _parseTimeOfDay(currentTime) ?? TimeOfDay.now();
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-    );
-
-    if (picked == null) return allowKeep ? currentTime : null;
-    return _formatTimeOfDay(picked);
   }
 }
 
