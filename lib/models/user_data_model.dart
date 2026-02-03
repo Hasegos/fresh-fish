@@ -197,6 +197,8 @@ class UserData {
   final List<CustomReward> customRewards;
   final List<PlacedDecoration> decorations;
   final List<String> ownedDecorations;
+  final List<String> ownedSkins;
+  final String currentSkinId;
   final List<TimerSession> timerSessions;
 
   UserData({
@@ -216,6 +218,8 @@ class UserData {
     required this.customRewards,
     required this.decorations,
     required this.ownedDecorations,
+    required this.ownedSkins,
+    required this.currentSkinId,
     required this.timerSessions,
   });
 
@@ -275,6 +279,10 @@ class UserData {
       ownedDecorations: (json['ownedDecorations'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ?? [],
+      ownedSkins: (json['ownedSkins'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ?? ['skin_default'],
+      currentSkinId: json['currentSkinId'] as String? ?? 'skin_default',
       timerSessions: (json['timerSessions'] as List<dynamic>?)
           ?.map((e) => TimerSession.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
@@ -299,6 +307,8 @@ class UserData {
       'customRewards': customRewards.map((e) => e.toJson()).toList(),
       'decorations': decorations.map((e) => e.toJson()).toList(),
       'ownedDecorations': ownedDecorations,
+      'ownedSkins': ownedSkins,
+      'currentSkinId': currentSkinId,
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
     };
   }
@@ -320,6 +330,8 @@ class UserData {
     List<CustomReward>? customRewards,
     List<PlacedDecoration>? decorations,
     List<String>? ownedDecorations,
+    List<String>? ownedSkins,
+    String? currentSkinId,
     List<TimerSession>? timerSessions,
   }) {
     return UserData(
@@ -339,6 +351,8 @@ class UserData {
       customRewards: customRewards ?? this.customRewards,
       decorations: decorations ?? this.decorations,
       ownedDecorations: ownedDecorations ?? this.ownedDecorations,
+      ownedSkins: ownedSkins ?? this.ownedSkins,
+      currentSkinId: currentSkinId ?? this.currentSkinId,
       timerSessions: timerSessions ?? this.timerSessions,
     );
   }

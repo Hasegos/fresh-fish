@@ -276,7 +276,52 @@ class UserDataProvider extends ChangeNotifier {
     return true;
   }
 
-  // 👇 [새로 추가된 메서드 2: 메인으로 이동]
+  // 👇 [새로 추가된 메서드 2: 스킨 구매]
+  Future<bool> purchaseSkin(String skinId, int price) async {
+    if (_userData == null) return false;
+
+    // 1. 이미 소유했는지 확인
+    if (_userData!.ownedSkins.contains(skinId)) {
+      print("❌ 이미 소유한 스킨입니다.");
+      return false;
+    }
+
+    // 2. 골드 부족 여부 체크
+    if (_userData!.gold < price) {
+      print("❌ 골드가 부족하여 구매할 수 없습니다.");
+      return false;
+    }
+
+    // 3. 소유 목록 업데이트 및 골드 차감
+    final updatedOwned = [..._userData!.ownedSkins, skinId];
+
+    await updateUserData((data) => data.copyWith(
+      gold: data.gold - price,
+      ownedSkins: updatedOwned,
+    ));
+
+    print("✅ 스킨 구매 성공: $skinId");
+    return true;
+  }
+
+  // 👇 [새로 추가된 메서드 3: 스킨 선택]
+  Future<bool> selectSkin(String skinId) async {
+    if (_userData == null) return false;
+
+    // 1. 소유했는지 확인
+    if (!_userData!.ownedSkins.contains(skinId)) {
+      print("❌ 소유하지 않은 스킨입니다.");
+      return false;
+    }
+
+    // 2. 현재 스킨 변경
+    await updateUserData((data) => data.copyWith(currentSkinId: skinId));
+
+    print("✅ 스킨 선택 성공: $skinId");
+    return true;
+  }
+
+  // 👇 [새로 추가된 메서드 4: 메인으로 이동]
   /// [Why] 화면의 뒤로가기 버튼 등을 눌렀을 때 상태를 관리하거나 알림을 주기 위해 사용합니다.
   void backToMain() {
     // 현재는 알림(notifyListeners)만 주지만,
