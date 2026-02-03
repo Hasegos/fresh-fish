@@ -8,9 +8,6 @@ import 'providers/app_provider.dart';
 import 'providers/user_data_provider.dart';
 import 'screens/app_screen.dart';
 import 'screens/main/main_screen.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,18 +68,29 @@ class FishQuestApp extends StatelessWidget {
         title: 'Fresh Fish - 자기계발 습관 추적기',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-
-        initialRoute: '/login',
         routes: {
-          '/login': (_) => const LoginScreen(),
-          '/signup': (_) => const SignupScreen(),
-          '/home': (_) => const MainScreen(),
+          '/home': (context) => const MainScreen(),
         },
+        home: Consumer<AppProvider>(
+          builder: (context, appProvider, _) {
+            if (kDebugMode) {
+              debugPrint('🔍 AppProvider 상태: isLoading=${appProvider.isLoading}, isOnboardingComplete=${appProvider.isOnboardingComplete}, userData=${appProvider.userData}');
+            }
+
+            if (appProvider.isLoading) {
+              return _buildLoadingScreen();
+            }
+
+            if (!appProvider.isOnboardingComplete) {
+              return const OnboardingFlow();
+            }
+
+            return const MainScreen();
+          },
+        ),
       ),
     );
   }
-}
-
 
   Widget _buildLoadingScreen() {
     return const Scaffold(
@@ -103,3 +111,4 @@ class FishQuestApp extends StatelessWidget {
       ),
     );
   }
+}
