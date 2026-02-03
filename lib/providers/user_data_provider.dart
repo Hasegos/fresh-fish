@@ -321,7 +321,58 @@ class UserDataProvider extends ChangeNotifier {
     return true;
   }
 
-  // 👇 [새로 추가된 메서드 4: 메인으로 이동]
+  // 👇 [새로 추가된 메서드 4: 장식 위치 업데이트]
+  /// [Why] 장식 관리 화면에서 장식 위치를 변경할 때 사용합니다.
+  Future<void> updateDecorationPosition(
+    String decorationId,
+    double x,
+    double y,
+  ) async {
+    if (_userData == null) return;
+
+    final updatedDecorations = _userData!.decorations.map((deco) {
+      if (deco.decorationId == decorationId) {
+        return deco.copyWith(x: x, y: y);
+      }
+      return deco;
+    }).toList();
+
+    await updateUserData(
+      (data) => data.copyWith(decorations: updatedDecorations),
+    );
+  }
+
+  /// 장식 추가
+  Future<void> addDecoration(String decorationId, double x, double y) async {
+    if (_userData == null) return;
+
+    final newDecoration = PlacedDecoration(
+      decorationId: decorationId,
+      x: x,
+      y: y,
+    );
+
+    await updateUserData(
+      (data) => data.copyWith(
+        decorations: [...data.decorations, newDecoration],
+      ),
+    );
+  }
+
+  /// 장식 삭제
+  Future<void> removeDecoration(String decorationId) async {
+    if (_userData == null) return;
+
+    final updatedDecorations = _userData!.decorations
+        .where((deco) => deco.decorationId != decorationId)
+        .toList();
+
+    await updateUserData(
+      (data) => data.copyWith(decorations: updatedDecorations),
+    );
+  }
+
+  // 👇 [새로 추가된 메서드 5: 메인으로 이동]
   /// [Why] 화면의 뒤로가기 버튼 등을 눌렀을 때 상태를 관리하거나 알림을 주기 위해 사용합니다.
   void backToMain() {
     // 현재는 알림(notifyListeners)만 주지만,

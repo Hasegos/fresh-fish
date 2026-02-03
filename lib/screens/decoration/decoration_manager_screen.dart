@@ -4,10 +4,19 @@ import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../providers/user_data_provider.dart';
 import '../../widgets/bottom_navigation.dart';
+import '../../models/user_data_model.dart';
 
 /// 장식 관리 화면
-class DecorationManagerScreen extends StatelessWidget {
+class DecorationManagerScreen extends StatefulWidget {
   const DecorationManagerScreen({super.key});
+
+  @override
+  State<DecorationManagerScreen> createState() => _DecorationManagerScreenState();
+}
+
+class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
+  int _selectedTabIndex = 1; // 기본값: 정식 관리
+  PlacedDecoration? _selectedDecoration;
 
   @override
   Widget build(BuildContext context) {
@@ -16,49 +25,29 @@ class DecorationManagerScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context), // 👈 정의된 함수 호출
-
+            _buildHeader(context),
+            _buildTabBar(),
             Expanded(
               child: Consumer<UserDataProvider>(
                 builder: (context, provider, child) {
-                  // [Why] 소유한 장식 아이템 ID 리스트를 가져옵니다.
-                  final ownedIds = provider.userData?.ownedDecorations ?? [];
-
-                  // [Simple Example] 아이템 정보 데이터베이스 (실제로는 별도 파일로 관리 권장)
-                  final allItems = [
-                    {'id': 'deco_01', 'name': '푸른 산호', 'icon': '🪸'},
-                    {'id': 'deco_02', 'name': '황금 보물상자', 'icon': '🏴‍☠️'},
-                    {'id': 'deco_03', 'name': '해초 숲', 'icon': '🌿'},
-                  ];
-
-                  // [How] 내가 가진 아이템들만 필터링합니다.
-                  final myItems = allItems.where((item) => ownedIds.contains(item['id'])).toList();
-
-                  if (myItems.isEmpty) {
-                    return Center(
-                      child: Text(
-                        '보유 중인 장식이 없습니다.\n상점에서 장식을 구매해 보세요!',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 16,
-                        ),
-                      ),
-                    );
+                  if (provider.userData == null) {
+                    return const Center(child: Text('데이터 없음'));
                   }
 
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                  final decorations = provider.userData!.decorations;
+
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildStatsSection(decorations.length),
+                        _buildInfoBox(),
+                        _buildAquariumSection(
+                          context,
+                          decorations,
+                          provider,
+                        ),
+                      ],
                     ),
-                    itemCount: myItems.length,
-                    itemBuilder: (context, index) {
-                      return _buildOwnedItemCard(context, myItems[index]);
-                    },
                   );
                 },
               ),
@@ -67,85 +56,414 @@ class DecorationManagerScreen extends StatelessWidget {
           ],
         ),
       ),
-      // [Critical Fix] BottomNavigation에 필수 파라미터를 전달합니다.
       bottomNavigationBar: BottomNavigation(
-        currentIndex: 3, // 장식 관리 탭의 인덱스 번호 (임의 설정)
-        onTap: (index) {
-          // 탭 전환 로직 (예: Navigator push 등)
-          print("매니저 화면에서 탭 클릭: $index");
-        },
+        currentIndex: 4,
+        onTap: (index) {},
       ),
     );
   }
-
-  // --- 👇 위젯 함수 정의 부분 ---
 
   /// 상단 헤더
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            onPressed: () => context.read<UserDataProvider>().backToMain(),
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => context.read<UserDataProvider>().backToMain(),
+                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                '🎨 정식 관리',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          const Text(
-            '🎨 Decoration Manager',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          Consumer<UserDataProvider>(
+            builder: (context, provider, child) {
+              final gold = provider.userData?.gold ?? 0;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE5B4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '⭐ $gold',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  /// 보유 아이템 카드
-  Widget _buildOwnedItemCard(BuildContext context, Map<String, dynamic> item) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primaryPastel.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  /// 탭 바
+  Widget _buildTabBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
         children: [
-          Text(item['icon'] as String, style: const TextStyle(fontSize: 48)),
-          const SizedBox(height: 12),
-          Text(
-            item['name'] as String,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () {
-              // [How] 아이템을 수족관에 적용하는 로직 (예시)
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${item['name']} 장착 완료!'),
-                  backgroundColor: AppColors.statusSuccess,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryPastel,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('장착하기'),
-          ),
+          _buildTab('정식 보유', 0),
+          const SizedBox(width: 12),
+          _buildTab('정식 관리', 1),
+          const SizedBox(width: 12),
+          _buildTab('스킨테마', 2),
         ],
       ),
     );
+  }
+
+  Widget _buildTab(String label, int index) {
+    final isSelected = _selectedTabIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTabIndex = index;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 통계 섹션
+  Widget _buildStatsSection(int decorationCount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE3F2FD),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildStatItem('🔴 $decorationCount개', '배치 중'),
+            _buildStatItem('🔵 1개', '사용중'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String count, String label) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 정보 박스
+  Widget _buildInfoBox() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFC8E6C9)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.info_outline,
+              color: Color(0xFF2E7D32),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '장식을 드래그하여 위치를 변경하고, 길게 누르면 삭제할 수 있습니다.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: const Color(0xFF2E7D32),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 수족관 섹션
+  Widget _buildAquariumSection(
+    BuildContext context,
+    List<PlacedDecoration> decorations,
+    UserDataProvider provider,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '수족관 관리',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // 수족관 영역
+          Container(
+            width: double.infinity,
+            height: 350,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2A3A),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFF4FC3F7).withValues(alpha: 0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // 수족관 배경 그래디언트
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color(0xFF0D47A1).withValues(alpha: 0.6),
+                        const Color(0xFF1A237E).withValues(alpha: 0.8),
+                      ],
+                    ),
+                  ),
+                ),
+                // 장식 아이템들
+                ...decorations.map((decoration) {
+                  return _buildDraggableDecoration(
+                    context,
+                    decoration,
+                    provider,
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 현재 배치된 장식 목록
+          if (decorations.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF4CAF50), width: 2),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    _getDecorationEmoji(decorations.first.decorationId),
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _getDecorationName(decorations.first.decorationId),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    '배치중',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 드래그 가능한 장식 아이템
+  Widget _buildDraggableDecoration(
+    BuildContext context,
+    PlacedDecoration decoration,
+    UserDataProvider provider,
+  ) {
+    final containerWidth = MediaQuery.of(context).size.width - 64;
+    final containerHeight = 350.0;
+
+    return Positioned(
+      left: decoration.x * containerWidth,
+      top: decoration.y * containerHeight,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          final newX = (decoration.x + details.delta.dx / containerWidth).clamp(0.0, 1.0);
+          final newY = (decoration.y + details.delta.dy / containerHeight).clamp(0.0, 1.0);
+          provider.updateDecorationPosition(decoration.decorationId, newX, newY);
+        },
+        onLongPress: () {
+          _showDecorationMenu(context, decoration, provider);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: _selectedDecoration?.decorationId == decoration.decorationId
+                ? Colors.blue.withValues(alpha: 0.3)
+                : Colors.transparent,
+            border: _selectedDecoration?.decorationId == decoration.decorationId
+                ? Border.all(color: Colors.blue, width: 2)
+                : null,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              Text(
+                _getDecorationEmoji(decoration.decorationId),
+                style: const TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _getDecorationName(decoration.decorationId),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 장식 메뉴
+  void _showDecorationMenu(
+    BuildContext context,
+    PlacedDecoration decoration,
+    UserDataProvider provider,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _getDecorationName(decoration.decorationId),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('삭제', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  provider.removeDecoration(decoration.decorationId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${_getDecorationName(decoration.decorationId)} 삭제됨'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 장식 이모지 가져오기
+  String _getDecorationEmoji(String decorationId) {
+    const decos = {
+      'deco_01': '🪨',
+      'deco_02': '🏴‍☠️',
+      'deco_03': '🌿',
+    };
+    return decos[decorationId] ?? '❓';
+  }
+
+  /// 장식 이름 가져오기
+  String _getDecorationName(String decorationId) {
+    const decos = {
+      'deco_01': '신은 돌',
+      'deco_02': '황금 보물상자',
+      'deco_03': '해초 숲',
+    };
+    return decos[decorationId] ?? '알 수 없는 장식';
   }
 }

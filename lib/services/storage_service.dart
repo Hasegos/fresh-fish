@@ -108,13 +108,27 @@ class StorageService {
       waterQuality: 100,
       achievements: [],
       customRewards: [],
-      decorations: [],
+      decorations: [
+        PlacedDecoration(
+          decorationId: 'deco_01',
+          x: 0.2,
+          y: 0.4,
+        ),
+        PlacedDecoration(
+          decorationId: 'deco_02',
+          x: 0.5,
+          y: 0.5,
+        ),
+        PlacedDecoration(
+          decorationId: 'deco_03',
+          x: 0.7,
+          y: 0.6,
+        ),
+      ],
       ownedDecorations: [
-        'seaweed1',
-        'seaweed2',
-        'small_rock',
-        'coral_pink',
-        'shell',
+        'deco_01',
+        'deco_02',
+        'deco_03',
       ],
       ownedSkins: ['skin_default', 'skin_goldfish'],
       currentSkinId: 'skin_default',

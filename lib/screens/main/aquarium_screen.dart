@@ -24,7 +24,7 @@ class _AquariumScreenState extends State<AquariumScreen>
   late AnimationController _positionController;
   late Offset _fishPosition;
   late Offset _targetPosition;
-  String? _displayedMessage;
+  String? _displayedMessage = null;
   bool _showMessage = false;
 
   @override
@@ -184,10 +184,10 @@ class _AquariumScreenState extends State<AquariumScreen>
                     width: 280,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: AppColors.primaryPastel.withOpacity(0.3),
+                        color: AppColors.primaryPastel.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -207,7 +207,7 @@ class _AquariumScreenState extends State<AquariumScreen>
                     ),
                   ),
 
-                  // 배치된 장식들
+                  // 배치된 장식들 (읽기 전용 - 드래그 불가능)
                   ...userData.decorations.map((decoration) {
                     final decoData = availableDecorations.firstWhere(
                       (d) => d.id == decoration.decorationId,
@@ -216,43 +216,11 @@ class _AquariumScreenState extends State<AquariumScreen>
                     return Positioned(
                       left: decoration.x,
                       top: decoration.y,
-                      child: GestureDetector(
-                        onPanUpdate: (details) {
-                          // 드래그로 이동
-                          final newX = (decoration.x + details.delta.dx)
-                              .clamp(0.0, 280 - 40);
-                          final newY = (decoration.y + details.delta.dy)
-                              .clamp(0.0, 200 - 40);
-                          
-                          final updated = decoration.copyWith(
-                            x: newX,
-                            y: newY,
-                          );
-                          
-                          final updatedDecorations = userData.decorations.map(
-                            (d) => d.decorationId == decoration.decorationId ? updated : d,
-                          ).toList();
-                          
-                          context.read<UserDataProvider>().updateUserData(
-                            (data) => data.copyWith(decorations: updatedDecorations),
-                          );
-                        },
-                        onDoubleTap: () {
-                          // 더블클릭으로 제거
-                          final filtered = userData.decorations
-                              .where((d) => d.decorationId != decoration.decorationId)
-                              .toList();
-                          
-                          context.read<UserDataProvider>().updateUserData(
-                            (data) => data.copyWith(decorations: filtered),
-                          );
-                        },
-                        child: Tooltip(
-                          message: '드래그로 이동, 더블클릭으로 제거',
-                          child: Text(
-                            decoData.icon,
-                            style: const TextStyle(fontSize: 30),
-                          ),
+                      child: Tooltip(
+                        message: '장식 관리에서 이동/삭제 가능',
+                        child: Text(
+                          decoData.icon,
+                          style: const TextStyle(fontSize: 30),
                         ),
                       ),
                     );
@@ -323,10 +291,10 @@ class _AquariumScreenState extends State<AquariumScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.highlightPink.withOpacity(0.15),
+            color: AppColors.highlightPink.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.highlightPink.withOpacity(0.3),
+              color: AppColors.highlightPink.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -357,7 +325,7 @@ class _AquariumScreenState extends State<AquariumScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -392,144 +360,5 @@ class _AquariumScreenState extends State<AquariumScreen>
         ),
       ),
     );
-  }
-
-  Widget _buildActiveTodosList(BuildContext context, UserData userData) {
-    // Filter active todos
-    final activeTodos = userData.quests
-        .where((q) =>
-            q.questType == QuestType.daily &&
-            q.date == userData.currentDate &&
-            !q.completed)
-        .toList();
-
-    if (activeTodos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              '🎉',
-              style: TextStyle(fontSize: 48),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'All tasks completed!',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: activeTodos.length,
-      itemBuilder: (context, index) {
-        final todo = activeTodos[index];
-        return _buildTodoCard(todo);
-      },
-    );
-  }
-
-  Widget _buildTodoCard(Quest quest) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.borderLight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _getDifficultyColor(quest.difficulty),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  quest.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getDifficultyLabel(quest.difficulty),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _getDifficultyColor(quest.difficulty),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.accentPastel.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '+10',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.accentPastel,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getDifficultyColor(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return AppColors.statusSuccess;
-      case Difficulty.normal:
-        return AppColors.primaryPastel;
-      case Difficulty.hard:
-        return AppColors.highlightPink;
-    }
-  }
-
-  String _getDifficultyLabel(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return '쉬움';
-      case Difficulty.normal:
-        return '보통';
-      case Difficulty.hard:
-        return '어려움';
-    }
   }
 }

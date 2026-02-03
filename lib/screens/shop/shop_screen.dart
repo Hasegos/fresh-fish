@@ -465,7 +465,10 @@ class _ManageTab extends StatelessWidget {
                 itemCount: ownedDecorations.length,
                 itemBuilder: (context, index) {
                   final decoration = ownedDecorations[index];
-                  return _OwnedDecorationCard(decoration: decoration);
+                  return _OwnedDecorationCard(
+                    decoration: decoration,
+                    onPlaceDecoration: _placeDecoration,
+                  );
                 },
               ),
             ],
@@ -478,8 +481,12 @@ class _ManageTab extends StatelessWidget {
 
 class _OwnedDecorationCard extends StatelessWidget {
   final deco_model.Decoration decoration;
+  final Function(BuildContext, deco_model.Decoration) onPlaceDecoration;
 
-  const _OwnedDecorationCard({required this.decoration});
+  const _OwnedDecorationCard({
+    required this.decoration,
+    required this.onPlaceDecoration,
+  });
 
   Color _getRarityColor() {
     switch (decoration.rarity) {
@@ -572,7 +579,7 @@ class _OwnedDecorationCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  _placeDecoration(context, decoration);
+                  onPlaceDecoration(context, decoration);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
