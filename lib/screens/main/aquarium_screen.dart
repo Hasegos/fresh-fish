@@ -6,6 +6,7 @@ import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
 import '../../models/quest_model.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/habit_progress_section.dart';
 
 /// 메인 어항 화면 - 새로운 아키텍처
 class AquariumScreen extends StatefulWidget {
@@ -323,26 +324,20 @@ class _AquariumScreenState extends State<AquariumScreen>
   }
 
   Widget _buildMissionArea(BuildContext context, UserData userData) {
+    final todayQuests = userData.quests
+        .where((quest) => quest.date == userData.currentDate)
+        .toList();
+
     return Container(
       color: AppColors.background,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Text(
-              "My Today's Focus",
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: _buildActiveTodosList(context, userData),
-          ),
-        ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: HabitProgressSection(
+          todayQuests: todayQuests,
+          todos: userData.todos,
+          onQuestToggle: (questId) =>
+              context.read<UserDataProvider>().completeQuestById(questId),
+        ),
       ),
     );
   }

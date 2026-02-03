@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/user_data_model.dart';
 import '../models/fish_model.dart';
 import '../models/quest_model.dart';
+import '../utils/quest_utils.dart';
 import 'firebase_service.dart';
 
 /// 로컬 저장소 서비스
@@ -43,15 +44,21 @@ class StorageService {
 
       if (jsonString != null) {
         final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
-        return UserData.fromJson(jsonMap);
+        final loaded = UserData.fromJson(jsonMap);
+        final updated = _ensureDailyData(loaded);
+        if (updated != loaded) {
+          await saveUserData(updated);
+        }
+        return updated;
       }
 
       // 로컬에 없으면 Firebase에서 시도
       final firebaseData = await _firebaseService.getUserData();
       if (firebaseData != null) {
         // Firebase 데이터를 로컬에 저장
-        await saveUserData(firebaseData);
-        return firebaseData;
+        final updated = _ensureDailyData(firebaseData);
+        await saveUserData(updated);
+        return updated;
       }
     } catch (e) {
       print('데이터 불러오기 실패: $e');
@@ -158,5 +165,63 @@ class StorageService {
   /// 날짜 포맷
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  UserData _ensureDailyData(UserData data) {
+    final todayStr = _formatDate(DateTime.now());
+
+    final isNewUser = data.quests.isEmpty &&
+        data.habits.isEmpty &&
+        data.todos.isEmpty &&
+        data.history.isEmpty;
+
+    if (data.currentDate != todayStr) {
+      final nonDaily = data.quests
+          .where((q) => q.questType != QuestType.daily)
+          .toList();
+      final dailyQuests = QuestUtils.generateDailyQuests(
+        data.selectedCategories,
+        todayStr,
+      );
+
+      return data.copyWith(
+        currentDate: todayStr,
+        quests: [...nonDaily, ...dailyQuests],
+        habits: _resetHabitsForNewDay(data.habits),
+      );
+    }
+
+    if (isNewUser && data.selectedCategories.isNotEmpty) {
+      final dailyQuests = QuestUtils.generateDailyQuests(
+        data.selectedCategories,
+        todayStr,
+      );
+      return data.copyWith(
+        quests: [...data.quests, ...dailyQuests],
+      );
+    }
+
+    return data;
+  }
+
+  List<Habit> _resetHabitsForNewDay(List<Habit> habits) {
+    final today = DateTime.now();
+    return habits.map((habit) {
+      if (habit.lastCompletedAt == null) {
+        return habit.copyWith(completionCount: 0);
+      }
+
+      final lastCompleted =
+          DateTime.fromMillisecondsSinceEpoch(habit.lastCompletedAt!);
+      final isSameDay = lastCompleted.year == today.year &&
+          lastCompleted.month == today.month &&
+          lastCompleted.day == today.day;
+
+      if (isSameDay) {
+        return habit;
+      }
+
+      return habit.copyWith(completionCount: 0);
+    }).toList();
   }
 }

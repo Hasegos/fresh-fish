@@ -242,7 +242,7 @@ class DailiesScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 8),
                   Text(
-                    '+10',
+                    '+${quest.expReward}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -293,10 +293,11 @@ class DailiesScreen extends StatelessWidget {
     Quest quest,
     UserDataProvider provider,
   ) async {
+    await provider.completeQuestById(quest.id);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${quest.title} 완료! +10 EXP 획득'),
+          content: Text('${quest.title} ???! +${quest.expReward} EXP ???'),
           backgroundColor: AppColors.statusSuccess,
           duration: const Duration(seconds: 2),
         ),

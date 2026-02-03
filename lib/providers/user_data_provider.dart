@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../services/storage_service.dart';
+import '../utils/quest_utils.dart';
 
 /// 사용자 데이터 상태 관리 Provider
 /// [Why] 앱 전체에서 유저 정보(골드, 물고기 상태 등)를 공유하기 위해 사용합니다.
@@ -88,7 +89,7 @@ class UserDataProvider extends ChangeNotifier {
     }
   }
 
-  /// 퀘스트 완료 로직
+  /// ???????? ???
   Future<void> completeQuest(String questId, int expGain, int goldGain) async {
     if (_userData == null) return;
 
@@ -99,7 +100,136 @@ class UserDataProvider extends ChangeNotifier {
       return q;
     }).toList();
 
-    var currentExp = _userData!.fish.exp + expGain;
+    await _applyRewards(
+      exp: expGain,
+      gold: goldGain,
+      updater: (data) => data.copyWith(quests: updatedQuests),
+    );
+  }
+
+  Future<void> completeQuestById(String questId) async {
+    if (_userData == null) return;
+    final quest = _userData!.quests.firstWhere((q) => q.id == questId);
+    if (quest.completed) return;
+    await completeQuest(questId, quest.expReward, quest.goldReward);
+  }
+
+  Future<void> createQuest({
+    required String title,
+    required String category,
+    required Difficulty difficulty,
+    QuestType questType = QuestType.sub,
+    String? date,
+    String? reminderTime,
+  }) async {
+    if (_userData == null) return;
+    final quest = QuestUtils.createQuest(
+      category: category,
+      date: date ?? _userData!.currentDate,
+      difficulty: difficulty,
+      type: questType,
+      customTitle: title,
+      reminderTime: reminderTime,
+    );
+    await updateUserData((data) => data.copyWith(
+          quests: [...data.quests, quest],
+        ));
+  }
+
+  Future<void> updateQuest(Quest updated) async {
+    if (_userData == null) return;
+    final updatedQuests = _userData!.quests
+        .map((quest) => quest.id == updated.id ? updated : quest)
+        .toList();
+    await updateUserData((data) => data.copyWith(quests: updatedQuests));
+  }
+
+  Future<void> deleteQuest(String questId) async {
+    if (_userData == null) return;
+    final updatedQuests =
+        _userData!.quests.where((quest) => quest.id != questId).toList();
+    await updateUserData((data) => data.copyWith(quests: updatedQuests));
+  }
+
+  Future<void> createHabit({
+    required String title,
+    required String category,
+    required Difficulty difficulty,
+  }) async {
+    if (_userData == null) return;
+    final habit = QuestUtils.createHabit(
+      title: title,
+      category: category,
+      difficulty: difficulty,
+    );
+    await updateUserData((data) => data.copyWith(
+          habits: [...data.habits, habit],
+        ));
+  }
+
+  Future<void> updateHabit(Habit updated) async {
+    if (_userData == null) return;
+    final updatedHabits = _userData!.habits
+        .map((habit) => habit.id == updated.id ? updated : habit)
+        .toList();
+    await updateUserData((data) => data.copyWith(habits: updatedHabits));
+  }
+
+  Future<void> deleteHabit(String habitId) async {
+    if (_userData == null) return;
+    final updatedHabits =
+        _userData!.habits.where((habit) => habit.id != habitId).toList();
+    await updateUserData((data) => data.copyWith(habits: updatedHabits));
+  }
+
+  Future<void> completeHabit(String habitId) async {
+    if (_userData == null) return;
+    final now = DateTime.now();
+
+    final updatedHabits = _userData!.habits.map((habit) {
+      if (habit.id != habitId) return habit;
+
+      final lastCompletedAt = habit.lastCompletedAt;
+      final lastDate = lastCompletedAt == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(lastCompletedAt);
+      final isSameDay = lastDate != null &&
+          lastDate.year == now.year &&
+          lastDate.month == now.month &&
+          lastDate.day == now.day;
+      final isYesterday = lastDate != null &&
+          lastDate.year == now.year &&
+          lastDate.month == now.month &&
+          lastDate.day == now.day - 1;
+
+      final nextCompletionCount =
+          isSameDay ? habit.completionCount + 1 : 1;
+      final nextComboCount = isSameDay
+          ? habit.comboCount
+          : (isYesterday ? (habit.comboCount ?? 0) + 1 : 1);
+
+      return habit.copyWith(
+        completionCount: nextCompletionCount,
+        totalCompletions: habit.totalCompletions + 1,
+        lastCompletedAt: now.millisecondsSinceEpoch,
+        comboCount: nextComboCount,
+      );
+    }).toList();
+
+    final habit = _userData!.habits.firstWhere((h) => h.id == habitId);
+    await _applyRewards(
+      exp: habit.expReward,
+      gold: habit.goldReward,
+      updater: (data) => data.copyWith(habits: updatedHabits),
+    );
+  }
+
+  Future<void> _applyRewards({
+    required int exp,
+    required int gold,
+    required UserData Function(UserData) updater,
+  }) async {
+    var currentExp = _userData!.fish.exp + exp;
     var currentLevel = _userData!.fish.level;
 
     while (currentExp >= 100) {
@@ -113,12 +243,13 @@ class UserDataProvider extends ChangeNotifier {
       hp: (_userData!.fish.hp + 5).clamp(0, 100),
     );
 
-    await updateUserData((data) => data.copyWith(
-      fish: updatedFish,
-      gold: data.gold + goldGain,
-      quests: updatedQuests,
-      waterQuality: (data.waterQuality + 3).clamp(0, 100),
-    ));
+    await updateUserData(
+      (data) => updater(data).copyWith(
+        fish: updatedFish,
+        gold: data.gold + gold,
+        waterQuality: (data.waterQuality + 3).clamp(0, 100),
+      ),
+    );
   }
 
   // 👇 [새로 추가된 메서드 1: 장식 구매]
