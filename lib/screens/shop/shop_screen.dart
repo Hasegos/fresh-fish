@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/decorations.dart';
 import '../../data/skins.dart';
-import '../../models/decoration_model.dart';
+import '../../models/decoration_model.dart' as deco_model;
 import '../../models/skin_model.dart';
+import '../../models/user_data_model.dart';
 import '../../providers/user_data_provider.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -148,7 +149,7 @@ class _ShopTab extends StatelessWidget {
   }
 
   void _buyDecoration(BuildContext context, UserDataProvider provider,
-      Decoration decoration) {
+      deco_model.Decoration decoration) {
     final userData = provider.userData;
     if (userData == null) return;
 
@@ -208,7 +209,7 @@ class _ShopTab extends StatelessWidget {
 }
 
 class _DecorationCard extends StatelessWidget {
-  final Decoration decoration;
+  final deco_model.Decoration decoration;
   final bool isOwned;
   final VoidCallback onBuy;
 
@@ -220,13 +221,13 @@ class _DecorationCard extends StatelessWidget {
 
   Color _getRarityColor() {
     switch (decoration.rarity) {
-      case Rarity.common:
+      case deco_model.Rarity.common:
         return const Color(0xFF3B82F6);
-      case Rarity.rare:
+      case deco_model.Rarity.rare:
         return const Color(0xFF8B5CF6);
-      case Rarity.epic:
+      case deco_model.Rarity.epic:
         return const Color(0xFFEC4899);
-      case Rarity.legendary:
+      case deco_model.Rarity.legendary:
         return const Color(0xFFF59E0B);
     }
   }
@@ -245,7 +246,7 @@ class _DecorationCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: _getRarityColor().withOpacity(0.2),
+              color: _getRarityColor().withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -345,13 +346,13 @@ class _DecorationCard extends StatelessWidget {
 
   String _getRarityLabel() {
     switch (decoration.rarity) {
-      case Rarity.common:
+      case deco_model.Rarity.common:
         return '일반';
-      case Rarity.rare:
+      case deco_model.Rarity.rare:
         return '레어';
-      case Rarity.epic:
+      case deco_model.Rarity.epic:
         return '에픽';
-      case Rarity.legendary:
+      case deco_model.Rarity.legendary:
         return '레전더리';
     }
   }
@@ -360,6 +361,40 @@ class _DecorationCard extends StatelessWidget {
 // ========== 장식 관리 탭 ==========
 class _ManageTab extends StatelessWidget {
   const _ManageTab();
+
+  void _placeDecoration(
+      BuildContext context, deco_model.Decoration decoration) {
+    final provider = context.read<UserDataProvider>();
+    final userData = provider.userData;
+    if (userData == null) return;
+
+    // 이미 배치되어 있는지 확인
+    final alreadyPlaced = userData.decorations
+        .any((d) => d.decorationId == decoration.id);
+    
+    if (alreadyPlaced) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${decoration.name}은(는) 이미 배치되어 있습니다.')),
+      );
+      return;
+    }
+
+    // 새로운 배치 추가 (기본 위치: 가운데)
+    final newPlaced = PlacedDecoration(
+      decorationId: decoration.id,
+      x: 120,
+      y: 80,
+    );
+
+    final updated = [...userData.decorations, newPlaced];
+    provider.updateUserData(
+      (data) => data.copyWith(decorations: updated),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${decoration.name}을(를) 배치했습니다!')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -442,19 +477,19 @@ class _ManageTab extends StatelessWidget {
 }
 
 class _OwnedDecorationCard extends StatelessWidget {
-  final Decoration decoration;
+  final deco_model.Decoration decoration;
 
   const _OwnedDecorationCard({required this.decoration});
 
   Color _getRarityColor() {
     switch (decoration.rarity) {
-      case Rarity.common:
+      case deco_model.Rarity.common:
         return const Color(0xFF3B82F6);
-      case Rarity.rare:
+      case deco_model.Rarity.rare:
         return const Color(0xFF8B5CF6);
-      case Rarity.epic:
+      case deco_model.Rarity.epic:
         return const Color(0xFFEC4899);
-      case Rarity.legendary:
+      case deco_model.Rarity.legendary:
         return const Color(0xFFF59E0B);
     }
   }
@@ -471,7 +506,7 @@ class _OwnedDecorationCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: _getRarityColor().withOpacity(0.2),
+            color: _getRarityColor().withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -536,7 +571,9 @@ class _OwnedDecorationCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  _placeDecoration(context, decoration);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -712,7 +749,7 @@ class _SkinCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: _getRarityColor().withOpacity(0.2),
+              color: _getRarityColor().withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

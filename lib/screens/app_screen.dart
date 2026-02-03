@@ -13,7 +13,7 @@ import 'main/main_screen.dart';
 
 /// 앱 메인 진입점
 class AppScreen extends StatelessWidget {
-  const AppScreen({Key? key}) : super(key: key);
+  const AppScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,7 @@ class AppScreen extends StatelessWidget {
 
 /// 온보딩 플로우
 class OnboardingFlow extends StatefulWidget {
-  const OnboardingFlow({Key? key}) : super(key: key);
+  const OnboardingFlow({super.key});
 
   @override
   State<OnboardingFlow> createState() => _OnboardingFlowState();
@@ -117,6 +117,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         customRewards: [],
         decorations: [],
         ownedDecorations: [],
+        ownedSkins: ['skin_default'],
+        currentSkinId: 'skin_default',
         timerSessions: [],
       );
 

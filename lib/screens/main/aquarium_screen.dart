@@ -7,6 +7,7 @@ import '../../models/fish_model.dart';
 import '../../models/quest_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/habit_progress_section.dart';
+import '../../data/decorations.dart';
 
 /// 메인 어항 화면 - 새로운 아키텍처
 class AquariumScreen extends StatefulWidget {
@@ -205,6 +206,57 @@ class _AquariumScreenState extends State<AquariumScreen>
                       ),
                     ),
                   ),
+
+                  // 배치된 장식들
+                  ...userData.decorations.map((decoration) {
+                    final decoData = availableDecorations.firstWhere(
+                      (d) => d.id == decoration.decorationId,
+                      orElse: () => availableDecorations.first,
+                    );
+                    return Positioned(
+                      left: decoration.x,
+                      top: decoration.y,
+                      child: GestureDetector(
+                        onPanUpdate: (details) {
+                          // 드래그로 이동
+                          final newX = (decoration.x + details.delta.dx)
+                              .clamp(0.0, 280 - 40);
+                          final newY = (decoration.y + details.delta.dy)
+                              .clamp(0.0, 200 - 40);
+                          
+                          final updated = decoration.copyWith(
+                            x: newX,
+                            y: newY,
+                          );
+                          
+                          final updatedDecorations = userData.decorations.map(
+                            (d) => d.decorationId == decoration.decorationId ? updated : d,
+                          ).toList();
+                          
+                          context.read<UserDataProvider>().updateUserData(
+                            (data) => data.copyWith(decorations: updatedDecorations),
+                          );
+                        },
+                        onDoubleTap: () {
+                          // 더블클릭으로 제거
+                          final filtered = userData.decorations
+                              .where((d) => d.decorationId != decoration.decorationId)
+                              .toList();
+                          
+                          context.read<UserDataProvider>().updateUserData(
+                            (data) => data.copyWith(decorations: filtered),
+                          );
+                        },
+                        child: Tooltip(
+                          message: '드래그로 이동, 더블클릭으로 제거',
+                          child: Text(
+                            decoData.icon,
+                            style: const TextStyle(fontSize: 30),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
 
                   // Speech bubble
                   if (_showMessage)
