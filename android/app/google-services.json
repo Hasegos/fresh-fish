@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "364045832176",
-    "project_id": "fresh-fish-2e934",
-    "storage_bucket": "fresh-fish-2e934.firebasestorage.app"
+    "project_number": "198885947824",
+    "project_id": "fresh-fish-57977",
+    "storage_bucket": "fresh-fish-57977.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:364045832176:android:8358d629f0a87bf27e1735",
+        "mobilesdk_app_id": "1:198885947824:android:454de4fbe55bff66babe75",
         "android_client_info": {
           "package_name": "uc.vibecoding.fresh_fish"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDCEiBbLfd2hDYMDOB_5fxCl4zNxlodi5Y"
+          "current_key": "AIzaSyDSp4S42W10g6yUPU336eufiMuLdAmVoJA"
         }
       ],
       "services": {
