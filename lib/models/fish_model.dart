@@ -111,6 +111,7 @@ class Fish {
   final int hp;
   final int maxHp;
   final int? eggHatchedAt; // 밀리초 단위 타임스탬프
+  final String eggColor; // 알 색상 (16진수 색상 코드: #RRGGBB 또는 이모지)
 
   Fish({
     required this.id,
@@ -120,6 +121,7 @@ class Fish {
     required this.hp,
     required this.maxHp,
     this.eggHatchedAt,
+    this.eggColor = '🟡', // 기본값: 노란색 구
   });
 
   /// JSON → Fish
@@ -135,6 +137,7 @@ class Fish {
       hp: json['hp'] as int? ?? 100,
       maxHp: json['maxHp'] as int? ?? 100,
       eggHatchedAt: json['eggHatchedAt'] as int?,
+      eggColor: json['eggColor'] as String? ?? '🟡',
     );
   }
 
@@ -148,6 +151,7 @@ class Fish {
       'hp': hp,
       'maxHp': maxHp,
       'eggHatchedAt': eggHatchedAt,
+      'eggColor': eggColor,
     };
   }
 
@@ -160,6 +164,7 @@ class Fish {
     int? hp,
     int? maxHp,
     int? eggHatchedAt,
+    String? eggColor,
   }) {
     return Fish(
       id: id ?? this.id,
@@ -169,6 +174,7 @@ class Fish {
       hp: hp ?? this.hp,
       maxHp: maxHp ?? this.maxHp,
       eggHatchedAt: eggHatchedAt ?? this.eggHatchedAt,
+      eggColor: eggColor ?? this.eggColor,
     );
   }
 }

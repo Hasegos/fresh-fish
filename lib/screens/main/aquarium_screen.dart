@@ -8,6 +8,8 @@ import '../../models/quest_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/habit_progress_section.dart';
 import '../../data/decorations.dart';
+import '../../data/skins.dart';
+import '../../utils/level_utils.dart';
 
 /// 메인 어항 화면 - 새로운 아키텍처
 class AquariumScreen extends StatefulWidget {
@@ -200,10 +202,7 @@ class _AquariumScreenState extends State<AquariumScreen>
                     top: _fishPosition.dy,
                     child: GestureDetector(
                       onTap: _onFishTapped,
-                      child: Text(
-                        fish.type.emoji,
-                        style: const TextStyle(fontSize: 60),
-                      ),
+                      child: _buildFishDisplay(userData),
                     ),
                   ),
 
@@ -359,6 +358,40 @@ class _AquariumScreenState extends State<AquariumScreen>
               context.read<UserDataProvider>().completeQuestById(questId),
         ),
       ),
+    );
+  }
+
+  /// 현재 선택된 스킨을 표시하는 메서드
+  /// - 기본 물고기(skin_default): 레벨에 따라 알 또는 성체 상태 표시
+  /// - 다른 스킨: 항상 성체 상태(스킨 아이콘)로 표시
+  Widget _buildFishDisplay(UserData userData) {
+    final fish = userData.fish;
+    final currentSkinId = userData.currentSkinId;
+    
+    // 현재 선택된 스킨 찾기
+    final selectedSkin = availableSkins.firstWhere(
+      (skin) => skin.id == currentSkinId,
+      orElse: () => availableSkins.first,
+    );
+
+    // 기본 물고기일 때만 레벨 개념 적용
+    if (currentSkinId == 'skin_default') {
+      // 물고기 레벨에 따른 진화 단계 확인
+      final evolutionStage = getEvolutionStage(fish.level);
+      
+      // 알 상태일 때는 저장된 알 색상 표시
+      if (evolutionStage == EvolutionStage.egg) {
+        return Text(
+          fish.eggColor,
+          style: const TextStyle(fontSize: 60),
+        );
+      }
+    }
+    
+    // 기본 물고기 성체 또는 다른 스킨: 스킨 아이콘 표시
+    return Text(
+      selectedSkin.icon,
+      style: const TextStyle(fontSize: 60),
     );
   }
 }

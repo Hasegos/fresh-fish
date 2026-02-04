@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../data/skins.dart';
 import '../../models/skin_model.dart';
 import '../../providers/user_data_provider.dart';
+import 'purchase_confirm_dialog.dart';
+import 'shop_colors.dart';
 
 // ========== 스킨 테마 탭 ==========
 class SkinTab extends StatelessWidget {
@@ -68,46 +70,43 @@ class SkinTab extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(skin.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(skin.icon, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
-            Text(skin.description),
-            const SizedBox(height: 12),
-            Text(
-              '${skin.cost} G에 구매하시겠습니까?',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              provider.purchaseSkin(skin.id, skin.cost);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${skin.name}을(를) 구매했습니다!')),
-              );
-            },
-            child: const Text('구매'),
-          ),
-        ],
+      builder: (context) => PurchaseConfirmDialog(
+        itemName: skin.name,
+        icon: skin.icon,
+        description: skin.description,
+        cost: skin.cost,
+        onConfirm: () => provider.purchaseSkin(skin.id, skin.cost),
       ),
-    );
+    ).then((success) {
+      if (success == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${skin.name}을(를) 구매했습니다!')),
+        );
+      } else if (success == false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${skin.name} 구매에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 
-  void _selectSkin(BuildContext context, UserDataProvider provider, Skin skin) {
-    provider.selectSkin(skin.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${skin.name}으로 변경했습니다!')),
-    );
+  void _selectSkin(BuildContext context, UserDataProvider provider, Skin skin) async {
+    final success = await provider.selectSkin(skin.id);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${skin.name}으로 변경했습니다!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('스킨 변경에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
@@ -129,15 +128,15 @@ class _SkinCard extends StatelessWidget {
   Color _getRarityColor() {
     switch (skin.rarity) {
       case SkinRarity.common:
-        return const Color(0xFF3B82F6);
+        return ShopColors.rarityCommon;
       case SkinRarity.uncommon:
-        return const Color(0xFF10B981);
+        return ShopColors.rarityUncommon;
       case SkinRarity.rare:
-        return const Color(0xFF8B5CF6);
+        return ShopColors.rarityRare;
       case SkinRarity.epic:
-        return const Color(0xFFEC4899);
+        return ShopColors.rarityEpic;
       case SkinRarity.legendary:
-        return const Color(0xFFF59E0B);
+        return ShopColors.rarityLegendary;
     }
   }
 
@@ -147,7 +146,7 @@ class _SkinCard extends StatelessWidget {
       onTap: isOwned && !isActive ? onSelect : (isOwned ? null : onBuy),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: ShopColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _getRarityColor(),
@@ -177,7 +176,7 @@ class _SkinCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
+                            color: ShopColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -206,7 +205,7 @@ class _SkinCard extends StatelessWidget {
                     skin.description,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF6B7280),
+                      color: ShopColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -227,10 +226,10 @@ class _SkinCard extends StatelessWidget {
                           : (isOwned ? onSelect : onBuy),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isActive
-                            ? const Color(0xFF10B981)
+                            ? ShopColors.successButton
                             : (isOwned
-                                ? const Color(0xFFFCD34D)
-                                : const Color(0xFF3B82F6)),
+                                ? ShopColors.warningButton
+                                : ShopColors.primaryButton),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -246,7 +245,7 @@ class _SkinCard extends StatelessWidget {
                           color: isActive
                               ? Colors.white
                               : (isOwned
-                                  ? const Color(0xFF8B5000)
+                                  ? ShopColors.warningButtonText
                                   : Colors.white),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,

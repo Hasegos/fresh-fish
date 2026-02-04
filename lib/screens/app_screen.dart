@@ -74,6 +74,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   int _step = 0;
   List<String> _selectedCategories = [];
   FishType? _selectedFish;
+  String _eggColor = '🟡'; // 초기 알 색상 (기본값: 노란색)
 
   /// 사용자 데이터 생성 (onboarding 완료 시)
   Future<void> _createUserData() async {
@@ -83,7 +84,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
 
     try {
-      debugPrint('🎣 UserData 생성 중... (fish: $_selectedFish, categories: $_selectedCategories)');
+      debugPrint('🎣 UserData 생성 중... (fish: $_selectedFish, eggColor: $_eggColor, categories: $_selectedCategories)');
       
       final uuid = const Uuid();
       final userId = uuid.v4();
@@ -97,6 +98,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         hp: 100,
         maxHp: 100,
         eggHatchedAt: DateTime.now().millisecondsSinceEpoch,
+        eggColor: _eggColor, // 선택된 알 색상 저장
       );
 
       // UserData 객체 생성
@@ -160,9 +162,12 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 2:
         return EggSelectionScreen(
           selectedCategories: _selectedCategories,
-          onComplete: (selectedFishType) async {
+          onComplete: (selectedFishType, eggColor) async {
             debugPrint('🎉 EggSelection 완료 → UserData 생성 및 저장');
-            setState(() => _selectedFish = selectedFishType);
+            setState(() {
+              _selectedFish = selectedFishType;
+              _eggColor = eggColor;
+            });
             await _createUserData();
           },
         );

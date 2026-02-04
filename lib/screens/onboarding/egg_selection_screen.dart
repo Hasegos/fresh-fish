@@ -4,7 +4,7 @@ import '../../models/fish_model.dart'; // FishType 정의가 포함된 파일
 
 class EggSelectionScreen extends StatefulWidget {
   final List<String> selectedCategories;
-  final Function(FishType)? onComplete;
+  final Function(FishType, String)? onComplete; // (FishType, eggColor)
 
   const EggSelectionScreen({
     Key? key,
@@ -54,7 +54,9 @@ class _EggSelectionScreenState extends State<EggSelectionScreen> {
     }
     setState(() => _isCreating = true);
     try {
-      widget.onComplete?.call(_selectedFish!);
+      // 선택된 물고기의 알 색상 가져오기
+      final eggColor = _fishData[_selectedFish]!['emoji'] as String;
+      widget.onComplete?.call(_selectedFish!, eggColor);
     } catch (e) {
       if (mounted) {
         setState(() => _isCreating = false);

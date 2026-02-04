@@ -4,6 +4,7 @@ import '../../data/decorations.dart';
 import '../../models/decoration_model.dart' as deco_model;
 import '../../models/user_data_model.dart';
 import '../../providers/user_data_provider.dart';
+import 'shop_colors.dart';
 
 // ========== 장식 관리 탭 ==========
 class ManageDecorationTab extends StatefulWidget {
@@ -123,6 +124,25 @@ class _ManageDecorationTabState extends State<ManageDecorationTab> {
                             );
                           }
                         },
+                        onRemoveFromAquarium: isPlaced
+                            ? () {
+                                provider.updateUserData(
+                                  (data) => data.copyWith(
+                                    decorations: [
+                                      ...data.decorations
+                                          .where((d) => d.decorationId != decoration.id)
+                                    ],
+                                  ),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${decoration.name} 제거됨'),
+                                    backgroundColor: Colors.orange,
+                                    duration: const Duration(milliseconds: 1500),
+                                  ),
+                                );
+                              }
+                            : null,
                       );
                     },
                   ),
@@ -161,44 +181,42 @@ class _AquariumEditorState extends State<_AquariumEditor> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFE0F2F1),
-            const Color(0xFFE3F2FD),
+            ShopColors.editorGradientStart,
+            ShopColors.editorGradientEnd,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF64B5F6).withValues(alpha: 0.3),
+          color: ShopColors.editorBorder.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
-      child: Stack(
-        children: [
-          // 수족관 배경
-          Container(
-            width: double.infinity,
-            height: 300,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: Colors.white.withValues(alpha: 0.3),
-            ),
+      child: Center(
+        child: Container(
+          width: 280,
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white.withValues(alpha: 0.3),
           ),
+          child: Stack(
+            children: [
+              // 드래그 가능한 장식들
+              ...widget.decorations.asMap().entries.map<Widget>((entry) {
+                final index = entry.key;
+                final decoration = entry.value;
+                final decoData = widget.ownedDecorations.firstWhere(
+                  (d) => d.id == decoration.decorationId,
+                  orElse: () => widget.ownedDecorations.first,
+                );
 
-          // 드래그 가능한 장식들
-          ...widget.decorations.asMap().entries.map<Widget>((entry) {
-            final index = entry.key;
-            final decoration = entry.value;
-            final decoData = widget.ownedDecorations.firstWhere(
-              (d) => d.id == decoration.decorationId,
-              orElse: () => widget.ownedDecorations.first,
-            );
-
-            return Positioned(
-              left: decoration.x.toDouble(),
-              top: decoration.y.toDouble(),
-              child: _DraggableDecorationItem(
-                decoration: decoData,
-                isSelected: _selectedDecoration == decoration,
-                onDragUpdate: (newX, newY) {
+                return Positioned(
+                  left: decoration.x,
+                  top: decoration.y,
+                  child: _DraggableDecorationItem(
+                    decoration: decoData,
+                    isSelected: _selectedDecoration == decoration,
+                    onDragUpdate: (newX, newY) {
                   final updatedDecorations = [...widget.decorations];
                   updatedDecorations[index] =
                       decoration.copyWith(x: newX, y: newY);
@@ -222,37 +240,39 @@ class _AquariumEditorState extends State<_AquariumEditor> {
             );
           }),
 
-          // 삭제 버튼 (선택된 장식이 있을 때)
-          if (_selectedDecoration != null)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: GestureDetector(
-                onTap: () {
-                  final updatedDecorations = [
-                    ...widget.decorations
-                        .where((d) => d != _selectedDecoration)
-                  ];
-                  widget.onDecorationsChanged(updatedDecorations);
-                  setState(() {
-                    _selectedDecoration = null;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.delete,
-                    color: Colors.white,
-                    size: 20,
+              // 삭제 버튼 (선택된 장식이 있을 때)
+              if (_selectedDecoration != null)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () {
+                      final updatedDecorations = [
+                        ...widget.decorations
+                            .where((d) => d != _selectedDecoration)
+                      ];
+                      widget.onDecorationsChanged(updatedDecorations);
+                      setState(() {
+                        _selectedDecoration = null;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -295,17 +315,22 @@ class _DraggableDecorationItemState extends State<_DraggableDecorationItem> {
       onPanUpdate: (details) {
         setState(() {
           _offset += details.delta;
+          // 280x200 수족관 경계 내에서만 움직이도록 제한
+          _offset = Offset(
+            _offset.dx.clamp(0, 250), // 280 - 30 (아이템 크기)
+            _offset.dy.clamp(0, 170), // 200 - 30 (아이템 크기)
+          );
         });
         widget.onDragUpdate(
-          (_offset.dx).clamp(0, 240),
-          (_offset.dy).clamp(0, 260),
+          _offset.dx,
+          _offset.dy,
         );
       },
       child: Container(
         decoration: BoxDecoration(
           border: widget.isSelected
               ? Border.all(
-                  color: Colors.red,
+                  color: Colors.blue.shade300,
                   width: 2,
                 )
               : null,
@@ -313,7 +338,7 @@ class _DraggableDecorationItemState extends State<_DraggableDecorationItem> {
         ),
         child: Text(
           widget.decoration.icon,
-          style: const TextStyle(fontSize: 48),
+          style: const TextStyle(fontSize: 30),
         ),
       ),
     );
@@ -325,127 +350,134 @@ class DecorationCard extends StatelessWidget {
   final deco_model.Decoration decoration;
   final bool isPlaced;
   final VoidCallback onAddToAquarium;
+  final VoidCallback? onRemoveFromAquarium;
 
   const DecorationCard({
     super.key,
     required this.decoration,
     required this.isPlaced,
     required this.onAddToAquarium,
+    this.onRemoveFromAquarium,
   });
 
   Color _getRarityColor() {
     switch (decoration.rarity) {
       case deco_model.Rarity.common:
-        return const Color(0xFF3B82F6);
+        return ShopColors.rarityCommon;
       case deco_model.Rarity.rare:
-        return const Color(0xFF8B5CF6);
+        return ShopColors.rarityRare;
       case deco_model.Rarity.epic:
-        return const Color(0xFFEC4899);
+        return ShopColors.rarityEpic;
       case deco_model.Rarity.legendary:
-        return const Color(0xFFF59E0B);
+        return ShopColors.rarityLegendary;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _getRarityColor(),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _getRarityColor().withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onDoubleTap: isPlaced && onRemoveFromAquarium != null
+          ? onRemoveFromAquarium
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: ShopColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _getRarityColor(),
+            width: 2,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    decoration.name,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1F2937),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    '보유중',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              decoration.description,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF6B7280),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
-            Center(
-              child: Text(
-                decoration.icon,
-                style: const TextStyle(fontSize: 40),
-              ),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: isPlaced ? null : onAddToAquarium,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isPlaced
-                      ? const Color(0xFFE5E7EB)
-                      : const Color(0xFF10B981),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  isPlaced ? '배치됨' : '추가',
-                  style: TextStyle(
-                    color: isPlaced
-                        ? const Color(0xFF9CA3AF)
-                        : Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: _getRarityColor().withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      decoration.name,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: ShopColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: ShopColors.successButton,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      '보유중',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                decoration.description,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: ShopColors.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              Center(
+                child: Text(
+                  decoration.icon,
+                  style: const TextStyle(fontSize: 40),
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isPlaced ? null : onAddToAquarium,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isPlaced
+                        ? ShopColors.disabledButton
+                        : ShopColors.successButton,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    isPlaced ? '배치됨' : '추가',
+                    style: TextStyle(
+                      color: isPlaced
+                          ? ShopColors.textDisabled
+                          : Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../data/decorations.dart';
 import '../../models/decoration_model.dart' as deco_model;
 import '../../providers/user_data_provider.dart';
+import 'purchase_confirm_dialog.dart';
+import 'shop_colors.dart';
 
 // ========== 장식 상점 탭 ==========
 class ShopTab extends StatelessWidget {
@@ -66,39 +68,30 @@ class ShopTab extends StatelessWidget {
     // 구매 확인 대화상자
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(decoration.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(decoration.icon, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
-            Text(decoration.description),
-            const SizedBox(height: 12),
-            Text(
-              '${decoration.cost} G에 구매하시겠습니까?',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ],
+      builder: (context) => PurchaseConfirmDialog(
+        itemName: decoration.name,
+        icon: decoration.icon,
+        description: decoration.description,
+        cost: decoration.cost,
+        onConfirm: () => provider.purchaseDecoration(
+          decoration.id,
+          decoration.cost,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              provider.purchaseDecoration(decoration.id, decoration.cost);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${decoration.name}을(를) 구매했습니다!')),
-              );
-            },
-            child: const Text('구매'),
-          ),
-        ],
       ),
-    );
+    ).then((success) {
+      if (success == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${decoration.name}을(를) 구매했습니다!')),
+        );
+      } else if (success == false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${decoration.name} 구매에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 }
 
@@ -116,13 +109,13 @@ class _DecorationCard extends StatelessWidget {
   Color _getRarityColor() {
     switch (decoration.rarity) {
       case deco_model.Rarity.common:
-        return const Color(0xFF3B82F6);
+        return ShopColors.rarityCommon;
       case deco_model.Rarity.rare:
-        return const Color(0xFF8B5CF6);
+        return ShopColors.rarityRare;
       case deco_model.Rarity.epic:
-        return const Color(0xFFEC4899);
+        return ShopColors.rarityEpic;
       case deco_model.Rarity.legendary:
-        return const Color(0xFFF59E0B);
+        return ShopColors.rarityLegendary;
     }
   }
 
@@ -132,7 +125,7 @@ class _DecorationCard extends StatelessWidget {
       onTap: isOwned ? null : onBuy,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: ShopColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _getRarityColor(),
@@ -162,7 +155,7 @@ class _DecorationCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
+                            color: ShopColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -191,7 +184,7 @@ class _DecorationCard extends StatelessWidget {
                     decoration.description,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF6B7280),
+                      color: ShopColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -210,8 +203,8 @@ class _DecorationCard extends StatelessWidget {
                       onPressed: isOwned ? null : onBuy,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isOwned
-                            ? const Color(0xFFE5E7EB)
-                            : const Color(0xFF3B82F6),
+                            ? ShopColors.disabledButton
+                            : ShopColors.primaryButton,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -221,7 +214,7 @@ class _DecorationCard extends StatelessWidget {
                         isOwned ? '보유 중' : '💰 ${decoration.cost}',
                         style: TextStyle(
                           color: isOwned
-                              ? const Color(0xFF9CA3AF)
+                              ? ShopColors.textDisabled
                               : Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,

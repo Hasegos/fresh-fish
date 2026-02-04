@@ -297,24 +297,25 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
     List<PlacedDecoration> decorations,
     UserDataProvider provider,
   ) {
-    return Container(
-      width: double.infinity,
-      height: 300,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF4FC3F7).withValues(alpha: 0.7),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return Center(
+      child: Container(
+        width: 280,
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2A3A),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFF4FC3F7).withValues(alpha: 0.7),
+            width: 2,
           ),
-        ],
-      ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
       child: Stack(
         children: [
           // 수족관 배경 그래디언트
@@ -333,40 +334,18 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
           ),
           // 장식 아이템들 (드래그 불가능)
           ...decorations.map((decoration) {
-            final containerWidth = MediaQuery.of(context).size.width - 64;
             return Positioned(
-              left: decoration.x * containerWidth,
-              top: decoration.y * 300,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    Text(
-                      _getDecorationEmoji(decoration.decorationId),
-                      style: const TextStyle(fontSize: 48),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _getDecorationName(decoration.decorationId),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              left: decoration.x,
+              top: decoration.y,
+              child: Text(
+                _getDecorationEmoji(decoration.decorationId),
+                style: const TextStyle(fontSize: 30),
               ),
             );
           }),
         ],
       ),
+    )
     );
   }
 
@@ -376,25 +355,26 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
     List<PlacedDecoration> shelfLayout,
     UserDataProvider provider,
   ) {
-    return Container(
-      width: double.infinity,
-      height: 300,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF81C784).withValues(alpha: 0.7),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return Center(
+      child: Container(
+        width: 280,
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2A3A),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFF81C784).withValues(alpha: 0.7),
+            width: 2,
           ),
-        ],
-      ),
-      child: Stack(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
         children: [
           // 수족관 배경 그래디언트
           Container(
@@ -420,6 +400,7 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
           }),
         ],
       ),
+      ),
     );
   }
 
@@ -429,16 +410,16 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
     PlacedDecoration decoration,
     UserDataProvider provider,
   ) {
-    final containerWidth = MediaQuery.of(context).size.width - 64;
-    final containerHeight = 300.0;
+    final containerWidth = 280.0;
+    final containerHeight = 200.0;
 
     return Positioned(
-      left: decoration.x * containerWidth,
-      top: decoration.y * containerHeight,
+      left: decoration.x,
+      top: decoration.y,
       child: GestureDetector(
         onPanUpdate: (details) {
-          final newX = (decoration.x + details.delta.dx / containerWidth).clamp(0.0, 1.0);
-          final newY = (decoration.y + details.delta.dy / containerHeight).clamp(0.0, 1.0);
+          final newX = (decoration.x + details.delta.dx).clamp(0.0, containerWidth - 30.0);
+          final newY = (decoration.y + details.delta.dy).clamp(0.0, containerHeight - 30.0);
           provider.updateShelfDecorationPosition(decoration.decorationId, newX, newY);
         },
         onTap: () {
@@ -454,37 +435,14 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
         },
         child: Container(
           decoration: BoxDecoration(
-            color: _selectedShelfDecoration?.decorationId == decoration.decorationId
-                ? Colors.amber.withValues(alpha: 0.3)
-                : Colors.transparent,
             border: _selectedShelfDecoration?.decorationId == decoration.decorationId
-                ? Border.all(color: Colors.amber, width: 2)
+                ? Border.all(color: Colors.blue.shade300, width: 2)
                 : null,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            children: [
-              Text(
-                _getDecorationEmoji(decoration.decorationId),
-                style: const TextStyle(fontSize: 48),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _getDecorationName(decoration.decorationId),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+          child: Text(
+            _getDecorationEmoji(decoration.decorationId),
+            style: const TextStyle(fontSize: 30),
           ),
         ),
       ),
@@ -546,6 +504,19 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
           );
         }
       },
+      onDoubleTap: () {
+        if (isInShelf) {
+          // 더블 클릭으로 제거
+          provider.removeFromDecorationShelf(decorationId);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${_getDecorationName(decorationId)} 제거됨'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(milliseconds: 1500),
+            ),
+          );
+        }
+      },
       child: Container(
         width: 100,
         padding: const EdgeInsets.all(10),
@@ -585,6 +556,22 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
                 ),
                 child: const Text(
                   '배치중',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '사용가능',
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.white,

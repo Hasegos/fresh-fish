@@ -258,13 +258,19 @@ class UserDataProvider extends ChangeNotifier {
   Future<bool> purchaseDecoration(String decorationId, int price) async {
     if (_userData == null) return false;
 
-    // 1. 골드 부족 여부 체크
+    // 1. 이미 소유했는지 확인
+    if (_userData!.ownedDecorations.contains(decorationId)) {
+      print("❌ 이미 소유한 장식입니다.");
+      return false;
+    }
+
+    // 2. 골드 부족 여부 체크
     if (_userData!.gold < price) {
       print("❌ 골드가 부족하여 구매할 수 없습니다.");
       return false;
     }
 
-    // 2. 소유 목록 업데이트 및 골드 차감
+    // 3. 소유 목록 업데이트 및 골드 차감
     final updatedOwned = [..._userData!.ownedDecorations, decorationId];
 
     await updateUserData((data) => data.copyWith(
