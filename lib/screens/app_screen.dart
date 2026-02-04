@@ -120,6 +120,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         ownedSkins: ['skin_default'],
         currentSkinId: 'skin_default',
         timerSessions: [],
+        decorationShelfLayout: [],
       );
 
       debugPrint('✅ UserData 생성 완료: $userId');

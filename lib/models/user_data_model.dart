@@ -200,6 +200,7 @@ class UserData {
   final List<String> ownedSkins;
   final String currentSkinId;
   final List<TimerSession> timerSessions;
+  final List<PlacedDecoration> decorationShelfLayout; // 장식 관리 화면에서의 배치
 
   UserData({
     required this.id,
@@ -221,6 +222,7 @@ class UserData {
     required this.ownedSkins,
     required this.currentSkinId,
     required this.timerSessions,
+    required this.decorationShelfLayout,
   });
 
   // --- UI 편의를 위한 계산 로직 (Getters) ---
@@ -286,6 +288,9 @@ class UserData {
       timerSessions: (json['timerSessions'] as List<dynamic>?)
           ?.map((e) => TimerSession.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
+      decorationShelfLayout: (json['decorationShelfLayout'] as List<dynamic>?)
+          ?.map((e) => PlacedDecoration.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -310,6 +315,7 @@ class UserData {
       'ownedSkins': ownedSkins,
       'currentSkinId': currentSkinId,
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
+      'decorationShelfLayout': decorationShelfLayout.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -333,6 +339,7 @@ class UserData {
     List<String>? ownedSkins,
     String? currentSkinId,
     List<TimerSession>? timerSessions,
+    List<PlacedDecoration>? decorationShelfLayout,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -354,6 +361,7 @@ class UserData {
       ownedSkins: ownedSkins ?? this.ownedSkins,
       currentSkinId: currentSkinId ?? this.currentSkinId,
       timerSessions: timerSessions ?? this.timerSessions,
+      decorationShelfLayout: decorationShelfLayout ?? this.decorationShelfLayout,
     );
   }
 }

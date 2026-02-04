@@ -16,7 +16,7 @@ class DecorationManagerScreen extends StatefulWidget {
 
 class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
   int _selectedTabIndex = 1; // 기본값: 정식 관리
-  PlacedDecoration? _selectedDecoration;
+  PlacedDecoration? _selectedShelfDecoration; // 장식장에서 선택된 장식
 
   @override
   Widget build(BuildContext context) {
@@ -139,10 +139,10 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+          color: isSelected ? AppColors.primaryPastel : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+            color: isSelected ? AppColors.primaryPastel : AppColors.textSecondary,
           ),
         ),
         child: Text(
@@ -236,122 +236,201 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
     );
   }
 
-  /// 수족관 섹션
+  /// 수족관 섹션 (메인 수족관 + 장식 관리 수족관 + 팔레트)
   Widget _buildAquariumSection(
     BuildContext context,
     List<PlacedDecoration> decorations,
     UserDataProvider provider,
   ) {
+    final shelfLayout = provider.userData?.decorationShelfLayout ?? [];
+    
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '수족관 관리',
+            '🐠 메인 수족관',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
-          // 수족관 영역
-          Container(
-            width: double.infinity,
-            height: 350,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E2A3A),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: const Color(0xFF4FC3F7).withValues(alpha: 0.5),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // 수족관 배경 그래디언트
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        const Color(0xFF0D47A1).withValues(alpha: 0.6),
-                        const Color(0xFF1A237E).withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-                // 장식 아이템들
-                ...decorations.map((decoration) {
-                  return _buildDraggableDecoration(
-                    context,
-                    decoration,
-                    provider,
-                  );
-                }),
-              ],
+          const SizedBox(height: 8),
+          // 메인 수족관 - 현재 배치된 장식들
+          _buildMainAquarium(context, decorations, provider),
+          const SizedBox(height: 24),
+          
+          Text(
+            '🎨 장식 관리 수족관',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
-          // 현재 배치된 장식 목록
-          if (decorations.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF4CAF50), width: 2),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    _getDecorationEmoji(decorations.first.decorationId),
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _getDecorationName(decorations.first.decorationId),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const Text(
-                    '배치중',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+          const SizedBox(height: 8),
+          // 장식 관리 수족관
+          _buildDecorationsShelfAquarium(context, shelfLayout, provider),
+          const SizedBox(height: 24),
+          
+          Text(
+            '📦 사용 가능한 장식',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
+          ),
+          const SizedBox(height: 8),
+          // 사용 가능한 장식 목록 (팔레트)
+          _buildDecorationPalette(context, provider),
         ],
       ),
     );
   }
 
-  /// 드래그 가능한 장식 아이템
-  Widget _buildDraggableDecoration(
+  /// 메인 수족관 (읽기 전용)
+  Widget _buildMainAquarium(
+    BuildContext context,
+    List<PlacedDecoration> decorations,
+    UserDataProvider provider,
+  ) {
+    return Container(
+      width: double.infinity,
+      height: 300,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2A3A),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFF4FC3F7).withValues(alpha: 0.7),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // 수족관 배경 그래디언트
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF0D47A1).withValues(alpha: 0.6),
+                  const Color(0xFF1A237E).withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+          ),
+          // 장식 아이템들 (드래그 불가능)
+          ...decorations.map((decoration) {
+            final containerWidth = MediaQuery.of(context).size.width - 64;
+            return Positioned(
+              left: decoration.x * containerWidth,
+              top: decoration.y * 300,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    Text(
+                      _getDecorationEmoji(decoration.decorationId),
+                      style: const TextStyle(fontSize: 48),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _getDecorationName(decoration.decorationId),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// 장식 관리 수족관 (드래그, 추가, 제거 가능)
+  Widget _buildDecorationsShelfAquarium(
+    BuildContext context,
+    List<PlacedDecoration> shelfLayout,
+    UserDataProvider provider,
+  ) {
+    return Container(
+      width: double.infinity,
+      height: 300,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2A3A),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFF81C784).withValues(alpha: 0.7),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // 수족관 배경 그래디언트
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF0D47A1).withValues(alpha: 0.6),
+                  const Color(0xFF1A237E).withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+          ),
+          // 장식 아이템들 (드래그 가능)
+          ...shelfLayout.map((decoration) {
+            return _buildDraggableShelfDecoration(
+              context,
+              decoration,
+              provider,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// 드래그 가능한 수족관 장식 (장식장용)
+  Widget _buildDraggableShelfDecoration(
     BuildContext context,
     PlacedDecoration decoration,
     UserDataProvider provider,
   ) {
     final containerWidth = MediaQuery.of(context).size.width - 64;
-    final containerHeight = 350.0;
+    final containerHeight = 300.0;
 
     return Positioned(
       left: decoration.x * containerWidth,
@@ -360,18 +439,26 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
         onPanUpdate: (details) {
           final newX = (decoration.x + details.delta.dx / containerWidth).clamp(0.0, 1.0);
           final newY = (decoration.y + details.delta.dy / containerHeight).clamp(0.0, 1.0);
-          provider.updateDecorationPosition(decoration.decorationId, newX, newY);
+          provider.updateShelfDecorationPosition(decoration.decorationId, newX, newY);
+        },
+        onTap: () {
+          setState(() {
+            _selectedShelfDecoration = 
+                _selectedShelfDecoration?.decorationId == decoration.decorationId 
+                    ? null 
+                    : decoration;
+          });
         },
         onLongPress: () {
-          _showDecorationMenu(context, decoration, provider);
+          _showShelfDecorationMenu(context, decoration, provider);
         },
         child: Container(
           decoration: BoxDecoration(
-            color: _selectedDecoration?.decorationId == decoration.decorationId
-                ? Colors.blue.withValues(alpha: 0.3)
+            color: _selectedShelfDecoration?.decorationId == decoration.decorationId
+                ? Colors.amber.withValues(alpha: 0.3)
                 : Colors.transparent,
-            border: _selectedDecoration?.decorationId == decoration.decorationId
-                ? Border.all(color: Colors.blue, width: 2)
+            border: _selectedShelfDecoration?.decorationId == decoration.decorationId
+                ? Border.all(color: Colors.amber, width: 2)
                 : null,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -404,8 +491,115 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
     );
   }
 
-  /// 장식 메뉴
-  void _showDecorationMenu(
+  /// 장식 팔레트 (사용 가능한 장식들)
+  Widget _buildDecorationPalette(
+    BuildContext context,
+    UserDataProvider provider,
+  ) {
+    final ownedDecorations = provider.userData?.ownedDecorations ?? [];
+    final shelfLayout = provider.userData?.decorationShelfLayout ?? [];
+    final shelfDecorationIds = shelfLayout.map((d) => d.decorationId).toSet();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDDDDDD)),
+      ),
+      child: SingleChildScrollView(
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final decorationId in ownedDecorations)
+              _buildPaletteItem(
+                context,
+                decorationId,
+                provider,
+                isInShelf: shelfDecorationIds.contains(decorationId),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 팔레트 아이템
+  Widget _buildPaletteItem(
+    BuildContext context,
+    String decorationId,
+    UserDataProvider provider,
+    {required bool isInShelf}
+  ) {
+    return GestureDetector(
+      onTap: () {
+        if (!isInShelf) {
+          // 수족관에 추가
+          provider.addToDecorationShelf(decorationId);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${_getDecorationName(decorationId)} 추가됨'),
+              backgroundColor: Colors.green,
+              duration: const Duration(milliseconds: 1500),
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isInShelf ? Colors.blue.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isInShelf ? Colors.blue : const Color(0xFFDDDDDD),
+            width: isInShelf ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              _getDecorationEmoji(decorationId),
+              style: const TextStyle(fontSize: 36),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _getDecorationName(decorationId),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            if (isInShelf)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '배치중',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 장식 메뉴 (장식장)
+  void _showShelfDecorationMenu(
     BuildContext context,
     PlacedDecoration decoration,
     UserDataProvider provider,
@@ -428,13 +622,16 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
               const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('삭제', style: TextStyle(color: Colors.red)),
+                title: const Text('수족관에서 제거', style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
-                  provider.removeDecoration(decoration.decorationId);
+                  provider.removeFromDecorationShelf(decoration.decorationId);
+                  setState(() {
+                    _selectedShelfDecoration = null;
+                  });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${_getDecorationName(decoration.decorationId)} 삭제됨'),
+                      content: Text('${_getDecorationName(decoration.decorationId)} 제거됨'),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -449,21 +646,21 @@ class _DecorationManagerScreenState extends State<DecorationManagerScreen> {
 
   /// 장식 이모지 가져오기
   String _getDecorationEmoji(String decorationId) {
-    const decos = {
+    const decorations = {
       'deco_01': '🪨',
       'deco_02': '🏴‍☠️',
       'deco_03': '🌿',
     };
-    return decos[decorationId] ?? '❓';
+    return decorations[decorationId] ?? '❓';
   }
 
   /// 장식 이름 가져오기
   String _getDecorationName(String decorationId) {
-    const decos = {
+    const decorations = {
       'deco_01': '신은 돌',
       'deco_02': '황금 보물상자',
       'deco_03': '해초 숲',
     };
-    return decos[decorationId] ?? '알 수 없는 장식';
+    return decorations[decorationId] ?? '알 수 없는 장식';
   }
 }

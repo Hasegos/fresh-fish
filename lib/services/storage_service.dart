@@ -27,10 +27,10 @@ class StorageService {
 
       // Firebase 저장 (백그라운드)
       _firebaseService.saveUserData(userData).catchError((e) {
-        print('Firebase 저장 실패 (무시): $e');
+        // 오류는 무시
       });
     } catch (e) {
-      print('로컬 저장 실패: $e');
+      // 로컬 저장 실패 처리
       rethrow;
     }
   }
@@ -61,7 +61,7 @@ class StorageService {
         return updated;
       }
     } catch (e) {
-      print('데이터 불러오기 실패: $e');
+      // 데이터 불러오기 실패 처리
     }
 
     return null;
@@ -74,7 +74,7 @@ class StorageService {
       await prefs.remove(_userDataKey);
       await _firebaseService.deleteUserData();
     } catch (e) {
-      print('데이터 삭제 실패: $e');
+      // 데이터 삭제 실패 처리
     }
   }
 
@@ -133,6 +133,7 @@ class StorageService {
       ownedSkins: ['skin_default', 'skin_goldfish'],
       currentSkinId: 'skin_default',
       timerSessions: [],
+      decorationShelfLayout: [],
     );
   }
 

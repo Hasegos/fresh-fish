@@ -372,6 +372,63 @@ class UserDataProvider extends ChangeNotifier {
     );
   }
 
+  // 👇 [장식장(장식 관리 수족관) 관련 메서드들]
+  
+  /// 장식장 수족관에 장식 추가
+  Future<void> addToDecorationShelf(String decorationId) async {
+    if (_userData == null) return;
+
+    // 이미 배치되어 있으면 추가하지 않음
+    if (_userData!.decorationShelfLayout.any((d) => d.decorationId == decorationId)) {
+      return;
+    }
+
+    final newDecoration = PlacedDecoration(
+      decorationId: decorationId,
+      x: 0.3 + (_userData!.decorationShelfLayout.length * 0.15).clamp(0.0, 0.5),
+      y: 0.3,
+    );
+
+    await updateUserData(
+      (data) => data.copyWith(
+        decorationShelfLayout: [...data.decorationShelfLayout, newDecoration],
+      ),
+    );
+  }
+
+  /// 장식장 수족관에서 장식 제거
+  Future<void> removeFromDecorationShelf(String decorationId) async {
+    if (_userData == null) return;
+
+    final updatedLayout = _userData!.decorationShelfLayout
+        .where((deco) => deco.decorationId != decorationId)
+        .toList();
+
+    await updateUserData(
+      (data) => data.copyWith(decorationShelfLayout: updatedLayout),
+    );
+  }
+
+  /// 장식장 수족관에서 장식 위치 업데이트
+  Future<void> updateShelfDecorationPosition(
+    String decorationId,
+    double x,
+    double y,
+  ) async {
+    if (_userData == null) return;
+
+    final updatedLayout = _userData!.decorationShelfLayout.map((deco) {
+      if (deco.decorationId == decorationId) {
+        return deco.copyWith(x: x, y: y);
+      }
+      return deco;
+    }).toList();
+
+    await updateUserData(
+      (data) => data.copyWith(decorationShelfLayout: updatedLayout),
+    );
+  }
+
   // 👇 [새로 추가된 메서드 5: 메인으로 이동]
   /// [Why] 화면의 뒤로가기 버튼 등을 눌렀을 때 상태를 관리하거나 알림을 주기 위해 사용합니다.
   void backToMain() {
