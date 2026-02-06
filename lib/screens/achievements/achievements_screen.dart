@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
-import '../../providers/app_provider.dart';
-// [Mentor Tip] 실제 모델 클래스를 임포트하면 dynamic 대신 정확한 타입을 쓸 수 있습니다.
-// import '../../models/achievement_model.dart';
+import '../../providers/user_data_provider.dart';
+import '../../models/models.dart';
 
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({Key? key}) : super(key: key);
+
+  static const String _devTitle = '[DEV] 업적 테스트: 퀘스트 화면에서 팝업';
+  static const String _devIcon = '🧪';
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +30,12 @@ class AchievementsScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Consumer<AppProvider>(
+      body: Consumer<UserDataProvider>(
         builder: (context, provider, child) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           final userData = provider.userData;
           if (userData == null) {
             return const Center(
@@ -39,12 +46,12 @@ class AchievementsScreen extends StatelessWidget {
             );
           }
 
-          final raw = userData.achievements as List<dynamic>;
-          final achievements = _buildOrderedAchievements(raw);
+          final achievements = _buildOrderedAchievements(userData.achievements);
 
           final unlockedCount = achievements.where((a) => a.unlocked).length;
           final totalCount = achievements.length;
-          final percentage = totalCount > 0 ? ((unlockedCount / totalCount) * 100).round() : 0;
+          final percentage =
+          totalCount > 0 ? ((unlockedCount / totalCount) * 100).round() : 0;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -61,9 +68,25 @@ class AchievementsScreen extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // 업적 그리드
+                const SizedBox(height: 12),
+                if (!kReleaseMode) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                    ),
+                    child: const Text(
+                      '개발자용 업적이 포함됩니다. 릴리즈 빌드에서는 자동으로 숨겨집니다.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -74,7 +97,17 @@ class AchievementsScreen extends StatelessWidget {
                     mainAxisSpacing: 12,
                   ),
                   itemCount: achievements.length,
-                  itemBuilder: (context, index) => _buildAchievementCard(achievements[index]),
+                  itemBuilder: (context, index) {
+                    final a = achievements[index];
+                    final isDev = (!kReleaseMode && a.title == _devTitle);
+
+                    return _buildAchievementCard(
+                      context,
+                      a,
+                      isDev: isDev,
+                      onTap: null,
+                    );
+                  },
                 ),
               ],
             ),
@@ -84,7 +117,6 @@ class AchievementsScreen extends StatelessWidget {
     );
   }
 
-  // 상단 진행률 카드
   Widget _buildProgressHeader(int percentage, int unlocked, int total) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -128,51 +160,137 @@ class AchievementsScreen extends StatelessWidget {
     );
   }
 
-  // [Critical Fix] 에러가 발생했던 핵심 함수
-  Widget _buildAchievementCard(_AchievementVM achievement) {
-    final String iconEmoji = achievement.icon;
-    final String title = achievement.title;
-    final bool isUnlocked = achievement.unlocked;
+  Widget _buildAchievementCard(
+      BuildContext context,
+      _AchievementVM achievement, {
+        required bool isDev,
+        required VoidCallback? onTap,
+      }) {
+    final isUnlocked = achievement.unlocked;
 
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(
         color: isUnlocked ? AppColors.surface : AppColors.background,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isUnlocked
+          color: isDev
+              ? Colors.orange.withOpacity(0.45)
+              : (isUnlocked
               ? AppColors.primaryPastel.withOpacity(0.3)
-              : AppColors.borderLight,
+              : AppColors.borderLight),
         ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            iconEmoji,
+            achievement.icon,
             style: TextStyle(
               fontSize: 40,
               color: isUnlocked ? null : AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: isUnlocked ? AppColors.textPrimary : AppColors.textTertiary,
-              fontWeight: FontWeight.w600,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              achievement.title,
+              style: TextStyle(
+                fontSize: 12,
+                color: isUnlocked ? AppColors.textPrimary : AppColors.textTertiary,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 6),
           if (!isUnlocked)
             Icon(
-              Icons.lock,
+              isDev ? Icons.build : Icons.lock,
               size: 16,
               color: AppColors.textTertiary,
             ),
         ],
       ),
     );
+
+    if (onTap == null) return card;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: card,
+      ),
+    );
+  }
+
+  List<_AchievementVM> _buildOrderedAchievements(List<Achievement> rawAchievements) {
+    final byTitle = <String, Achievement>{};
+    for (final a in rawAchievements) {
+      if (a.title.isNotEmpty) byTitle[a.title] = a;
+    }
+
+    final order = _achievementOrder();
+
+    return order.map((seed) {
+      final found = byTitle[seed.title];
+      if (found == null) {
+        return _AchievementVM(title: seed.title, icon: seed.icon, unlocked: false);
+      }
+
+      final icon = (found.icon.isNotEmpty) ? found.icon : seed.icon;
+
+      return _AchievementVM(
+        title: found.title,
+        icon: icon,
+        unlocked: found.unlocked == true,
+      );
+    }).toList();
+  }
+
+  List<_AchievementSeed> _achievementOrder() {
+    final base = <_AchievementSeed>[
+      _AchievementSeed('첫 퀘스트 만들기 (퀘스트 1개 생성)', '📝'),
+      _AchievementSeed('첫 클리어 (퀘스트 1개 완료)', '✅'),
+      _AchievementSeed('첫 보상 수령 (보상/코인/경험치 첫 획득)', '💰'),
+      _AchievementSeed('첫 수정 (퀘스트 수정 1회)', '✏️'),
+      _AchievementSeed('연속 완료 3일', '🔥'),
+      _AchievementSeed('연속 완료 7일', '🔥'),
+      _AchievementSeed('스트릭 복구자 (끊긴 뒤 다시 3일 연속)', '🩹'),
+      _AchievementSeed('10개 완료', '🔟'),
+      _AchievementSeed('25개 완료', '🏅'),
+      _AchievementSeed('50개 완료', '🥈'),
+      _AchievementSeed('100개 완료', '🥇'),
+      _AchievementSeed('하루 3개 완료', '📅'),
+      _AchievementSeed('하루 5개 완료', '📆'),
+      _AchievementSeed('주간 20개 완료', '🗓️'),
+      _AchievementSeed('월간 100개 완료', '🗓️'),
+      _AchievementSeed('서로 다른 카테고리 3개에서 각 1개 완료', '🧩'),
+      _AchievementSeed('서로 다른 카테고리 5개에서 각 1개 완료', '🧠'),
+      _AchievementSeed('공부 퀘스트 10개 완료', '📚'),
+      _AchievementSeed('운동 퀘스트 10개 완료', '🏋️'),
+      _AchievementSeed('청소/정리 퀘스트 10개 완료', '🧹'),
+      _AchievementSeed('자기관리 퀘스트 20개 완료', '🧴'),
+      _AchievementSeed('쉬움 퀘스트 30개 완료', '🙂'),
+      _AchievementSeed('어려움 퀘스트 10개 완료', '😤'),
+      _AchievementSeed('큰 퀘스트 클리어 (예: 60분 이상/난이도 상) 1회', '🏁'),
+      _AchievementSeed('마감 전 완료 10회 (데드라인 있으면)', '⏰'),
+      _AchievementSeed('아침형 인간 (06~09시 완료 10회)', '🌅'),
+      _AchievementSeed('야행성 (23시 이후 완료 10회)', '🌙'),
+      _AchievementSeed('주말에도 한다 (토/일 완료 20회)', '🎌'),
+      _AchievementSeed('정리왕 (완료/아카이브 정리 20회)', '🗂️'),
+      _AchievementSeed('완벽한 한 주 (주간 목표 100% 달성 1회)', '💯'),
+    ];
+
+    if (!kReleaseMode) {
+      base.insert(0, const _AchievementSeed(_devTitle, _devIcon));
+    }
+
+    return base;
   }
 }
 
@@ -191,68 +309,4 @@ class _AchievementVM {
     required this.icon,
     required this.unlocked,
   });
-}
-
-/// ✅ 여기 리스트 순서 = 화면 표시 순서
-const List<_AchievementSeed> _achievementOrder = [
-  _AchievementSeed('첫 퀘스트 만들기 (퀘스트 1개 생성)', '📝'),
-  _AchievementSeed('첫 클리어 (퀘스트 1개 완료)', '✅'),
-  _AchievementSeed('첫 보상 수령 (보상/코인/경험치 첫 획득)', '💰'),
-  _AchievementSeed('첫 수정 (퀘스트 수정 1회)', '✏️'),
-
-  _AchievementSeed('연속 완료 3일', '🔥'),
-  _AchievementSeed('연속 완료 7일', '🔥'),
-  _AchievementSeed('스트릭 복구자 (끊긴 뒤 다시 3일 연속)', '🩹'),
-
-  _AchievementSeed('10개 완료', '🔟'),
-  _AchievementSeed('25개 완료', '🏅'),
-  _AchievementSeed('50개 완료', '🥈'),
-  _AchievementSeed('100개 완료', '🥇'),
-
-  _AchievementSeed('하루 3개 완료', '📅'),
-  _AchievementSeed('하루 5개 완료', '📆'),
-
-  _AchievementSeed('주간 20개 완료', '🗓️'),
-  _AchievementSeed('월간 100개 완료', '🗓️'),
-
-  _AchievementSeed('서로 다른 카테고리 3개에서 각 1개 완료', '🧩'),
-  _AchievementSeed('서로 다른 카테고리 5개에서 각 1개 완료', '🧠'),
-
-  _AchievementSeed('공부 퀘스트 10개 완료', '📚'),
-  _AchievementSeed('운동 퀘스트 10개 완료', '🏋️'),
-  _AchievementSeed('청소/정리 퀘스트 10개 완료', '🧹'),
-  _AchievementSeed('자기관리 퀘스트 20개 완료', '🧴'),
-
-  _AchievementSeed('쉬움 퀘스트 30개 완료', '🙂'),
-  _AchievementSeed('어려움 퀘스트 10개 완료', '😤'),
-  _AchievementSeed('큰 퀘스트 클리어 (예: 60분 이상/난이도 상) 1회', '🏁'),
-
-  _AchievementSeed('마감 전 완료 10회 (데드라인 있으면)', '⏰'),
-  _AchievementSeed('아침형 인간 (06~09시 완료 10회)', '🌅'),
-  _AchievementSeed('야행성 (23시 이후 완료 10회)', '🌙'),
-  _AchievementSeed('주말에도 한다 (토/일 완료 20회)', '🎌'),
-
-  _AchievementSeed('정리왕 (완료/아카이브 정리 20회)', '🗂️'),
-  _AchievementSeed('완벽한 한 주 (주간 목표 100% 달성 1회)', '💯'),
-];
-
-List<_AchievementVM> _buildOrderedAchievements(List<dynamic> rawAchievements) {
-  // title 기준으로 매칭해서 순서 고정 + 없는 업적은 잠금으로 채움
-  final mapByTitle = <String, dynamic>{};
-  for (final a in rawAchievements) {
-    final t = (a.title as String?) ?? '';
-    if (t.isNotEmpty) mapByTitle[t] = a;
-  }
-
-  return _achievementOrder.map((seed) {
-    final a = mapByTitle[seed.title];
-    if (a == null) {
-      return _AchievementVM(title: seed.title, icon: seed.icon, unlocked: false);
-    }
-    return _AchievementVM(
-      title: (a.title as String?) ?? seed.title,
-      icon: (a.icon as String?) ?? seed.icon,
-      unlocked: a.unlocked == true,
-    );
-  }).toList();
 }

@@ -9,6 +9,7 @@ class AppProvider extends ChangeNotifier {
   UserData? _userData;
   bool _isLoading = true;
 
+
   // -------------------------
   // 알림 모드 설정 (임시: 앱 재실행 시 초기화됨)
   // -------------------------
@@ -153,6 +154,52 @@ class AppProvider extends ChangeNotifier {
     _userData = null;
     notifyListeners();
   }
+
+  /// 업적용 함수 추가
+  Future<Achievement?> unlockAchievement({
+    required String title,
+    required String icon,
+  }) async {
+    if (_userData == null) return null;
+
+    final List<Achievement> list = List<Achievement>.from(_userData!.achievements);
+
+    final idx = list.indexWhere((a) => a.title == title);
+
+    if (idx >= 0) {
+      // 이미 있으면 unlocked만 true로 바꿈
+      final current = list[idx];
+      if (current.unlocked == true) return null;
+
+      // copyWith 없으니까 새 객체로 교체 (id는 유지!)
+      final updated = Achievement(
+        id: current.id,
+        title: title,
+        icon: icon,
+        description: '개발자용 테스트 업적입니다. (탭으로 완료 처리)',
+        unlocked: true,
+      );
+
+      list[idx] = updated;
+      await updateUserData((data) => data.copyWith(achievements: list));
+      return updated;
+    } else {
+      // 없으면 새로 생성 (id 필수)
+      final created = Achievement(
+        id: const Uuid().v4(),
+        title: title,
+        icon: icon,
+        description: '개발자용 테스트 업적입니다. (탭으로 완료 처리)',
+        unlocked: true,
+      );
+
+
+      list.add(created);
+      await updateUserData((data) => data.copyWith(achievements: list));
+      return created;
+    }
+  }
+
 
   /// 온보딩 완료 처리
   Future<void> setOnboardingComplete() async {
