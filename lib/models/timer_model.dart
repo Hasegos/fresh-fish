@@ -65,3 +65,37 @@ class TimerCategory {
     return Color(int.parse(buffer.toString(), radix: 16));
   }
 }
+
+/// [TimerRunState]
+/// 백그라운드 타이머 상태를 로컬에 저장하기 위한 모델입니다.
+class TimerRunState {
+  final bool isRunning;
+  final String? category;
+  final int elapsedSeconds;
+  final int? startedAtMillis;
+
+  const TimerRunState({
+    required this.isRunning,
+    required this.category,
+    required this.elapsedSeconds,
+    required this.startedAtMillis,
+  });
+
+  factory TimerRunState.fromJson(Map<String, dynamic> json) {
+    return TimerRunState(
+      isRunning: json['isRunning'] as bool? ?? false,
+      category: json['category'] as String?,
+      elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
+      startedAtMillis: json['startedAtMillis'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'isRunning': isRunning,
+      'category': category,
+      'elapsedSeconds': elapsedSeconds,
+      'startedAtMillis': startedAtMillis,
+    };
+  }
+}

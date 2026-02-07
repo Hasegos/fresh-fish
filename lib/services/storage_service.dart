@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import '../models/user_data_model.dart';
 import '../models/fish_model.dart';
 import '../models/quest_model.dart';
+import '../models/timer_model.dart';
+import '../data/timer_categories.dart';
 import '../utils/quest_utils.dart';
 import 'firebase_service.dart';
 
@@ -14,6 +16,7 @@ class StorageService {
   StorageService._internal();
 
   static const String _userDataKey = 'user_data';
+  static const String _timerStateKey = 'timer_state';
   final FirebaseService _firebaseService = FirebaseService();
   final Uuid _uuid = const Uuid();
 
@@ -111,7 +114,30 @@ class StorageService {
       decorations: [],
       ownedDecorations: [],
       timerSessions: [],
+      timerCategories: defaultTimerCategories,
     );
+  }
+
+  Future<void> saveTimerState(TimerRunState state) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_timerStateKey, json.encode(state.toJson()));
+  }
+
+  Future<TimerRunState?> getTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_timerStateKey);
+    if (raw == null) return null;
+    try {
+      final jsonMap = json.decode(raw) as Map<String, dynamic>;
+      return TimerRunState.fromJson(jsonMap);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> clearTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_timerStateKey);
   }
 
   /// 초기 퀘스트 생성

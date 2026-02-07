@@ -4,6 +4,7 @@ import '../theme/app_text_styles.dart';
 
 /// 하단 네비게이션 바 위젯
 class BottomNavigation extends StatelessWidget {
+  static const double height = 56;
   final int currentIndex;
   final ValueChanged<int> onTap;
 
@@ -15,7 +16,9 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
+      height: height + bottomInset,
       decoration: BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
@@ -28,7 +31,7 @@ class BottomNavigation extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -81,13 +84,13 @@ class BottomNavigation extends StatelessWidget {
         onTap: () => onTap(index),
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? const Color(0xFF81E6D9).withOpacity(0.15)
@@ -96,21 +99,27 @@ class BottomNavigation extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  size: 24,
+                  size: 18,
                   color: isSelected
                       ? const Color(0xFF81E6D9)
                       : AppColors.textTertiary,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected
-                      ? const Color(0xFF81E6D9)
-                      : AppColors.textTertiary,
+              const SizedBox(height: 1),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 8,
+                    height: 0.95,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? const Color(0xFF81E6D9)
+                        : AppColors.textTertiary,
+                  ),
                 ),
               ),
             ],

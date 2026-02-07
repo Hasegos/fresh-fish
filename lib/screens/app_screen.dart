@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/app_provider.dart';
 import '../providers/user_data_provider.dart';
+import '../data/timer_categories.dart';
 import '../models/fish_model.dart';
 import '../models/user_data_model.dart';
 import '../utils/quest_utils.dart';
@@ -118,6 +119,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         decorations: [],
         ownedDecorations: [],
         timerSessions: [],
+        timerCategories: defaultTimerCategories,
       );
 
       debugPrint('✅ UserData 생성 완료: $userId');

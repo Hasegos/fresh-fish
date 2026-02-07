@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
 import 'providers/user_data_provider.dart';
-import 'screens/app_screen.dart';
 import 'screens/main/main_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
@@ -82,24 +81,3 @@ class FishQuestApp extends StatelessWidget {
     );
   }
 }
-
-
-  Widget _buildLoadingScreen() {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('🐠', style: TextStyle(fontSize: 80)),
-            SizedBox(height: 24),
-            CircularProgressIndicator(color: Color(0xFF4FC3F7)),
-            SizedBox(height: 16),
-            Text(
-              'My Tiny Aquarium',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }

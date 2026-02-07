@@ -74,6 +74,29 @@ class UserDataProvider extends ChangeNotifier {
     await updateGold(_userData!.gold + amount);
   }
 
+  Future<List<Achievement>> completeQuestById(String questId) async {
+    if (_userData == null) return [];
+
+    final quest = _userData!.quests.firstWhere(
+      (q) => q.id == questId,
+      orElse: () => Quest(
+        id: questId,
+        title: '',
+        category: '',
+        completed: true,
+        date: '',
+        expReward: 0,
+        goldReward: 0,
+        questType: QuestType.daily,
+        difficulty: Difficulty.normal,
+      ),
+    );
+
+    if (quest.completed == true) return [];
+
+    return completeQuest(questId, quest.expReward, quest.goldReward);
+  }
+
   // Quest completion + auto achievement check
   // Returns newly unlocked achievements (for popup)
   Future<List<Achievement>> completeQuest(String questId, int expGain, int goldGain) async {

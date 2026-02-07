@@ -131,6 +131,33 @@ class AppProvider extends ChangeNotifier {
         updater: (data) => data.copyWith(timerSessions: [...data.timerSessions, session]));
   }
 
+  Future<void> addTimerSession({required String category, required int durationSeconds}) async {
+    if (_userData == null) return;
+    final uuid = const Uuid();
+    final session = TimerSession(
+      id: uuid.v4(),
+      category: category,
+      durationSeconds: durationSeconds,
+      startTime: DateTime.now().millisecondsSinceEpoch - (durationSeconds * 1000),
+      endTime: DateTime.now().millisecondsSinceEpoch,
+      completed: true,
+    );
+
+    await updateUserData((data) =>
+        data.copyWith(timerSessions: [...data.timerSessions, session]));
+  }
+
+  Future<void> addTimerCategory(TimerCategory category) async {
+    if (_userData == null) return;
+
+    final exists = _userData!.timerCategories
+        .any((c) => c.name.trim() == category.name.trim());
+    if (exists) return;
+
+    final updated = [..._userData!.timerCategories, category];
+    await updateUserData((data) => data.copyWith(timerCategories: updated));
+  }
+
   /// 공통 보상 적용 시스템 (레벨업 로직 포함)
   Future<void> _applyRewards({required int exp, required int gold, required UserData Function(UserData) updater}) async {
     var currentExp = _userData!.fish.exp + exp;
