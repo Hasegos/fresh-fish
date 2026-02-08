@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 import '../../theme/app_colors.dart';
@@ -9,9 +8,6 @@ import '../../models/models.dart';
 
 class QuestsScreen extends StatelessWidget {
   const QuestsScreen({Key? key}) : super(key: key);
-
-  static const String _devAchievementTitle = '[DEV] 업적 테스트: 퀘스트 화면에서 팝업';
-  static const String _devAchievementIcon = '🧪';
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +32,7 @@ class QuestsScreen extends StatelessWidget {
 
             return Column(
               children: [
-                _buildHeader(allQuests),
-                if (!kReleaseMode)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: _buildDevTestCard(context),
-                  ),
+                _buildHeader(context, allQuests),
                 Expanded(
                   child: allQuests.isEmpty
                       ? const EmptyState(
@@ -68,62 +59,8 @@ class QuestsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDevTestCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withOpacity(0.35)),
-      ),
-      child: Row(
-        children: [
-          const Text('🧪', style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'DEV 테스트: 눌러서 업적 팝업 뜨는지 확인',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => _devUnlockAndPopup(context),
-            child: const Text('테스트'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _devUnlockAndPopup(BuildContext context) async {
-    final provider = context.read<UserDataProvider>();
-
-    final unlocked = await provider.unlockAchievement(
-      title: _devAchievementTitle,
-      icon: _devAchievementIcon,
-      description: '퀘스트 화면에서 DEV 업적 팝업 테스트',
-    );
-
-    if (!context.mounted) return;
-
-    if (unlocked == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미 완료된 DEV 업적입니다.')),
-      );
-      return;
-    }
-
-    _showAchievementPopup(
-      context,
-      icon: unlocked.icon,
-      title: unlocked.title,
-    );
-  }
-
-  Widget _buildHeader(List<Quest> quests) {
+  // ✅ 헤더 (+ 추가 버튼 포함)
+  Widget _buildHeader(BuildContext context, List<Quest> quests) {
     final completed = quests.where((q) => q.completed == true).length;
     final total = quests.length;
 
@@ -140,6 +77,13 @@ class QuestsScreen extends StatelessWidget {
             ),
           ),
           const Spacer(),
+
+          IconButton(
+            onPressed: () => _openQuestForm(context),
+            icon: const Icon(Icons.add, color: AppColors.textPrimary),
+            tooltip: '퀘스트 추가',
+          ),
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -160,6 +104,7 @@ class QuestsScreen extends StatelessWidget {
     );
   }
 
+  // ✅ 카드 (완료 + 수정/삭제 메뉴 + 시간 표시)
   Widget _buildQuestCard(
       BuildContext context,
       Quest quest,
@@ -197,19 +142,59 @@ class QuestsScreen extends StatelessWidget {
                     activeColor: AppColors.statusSuccess,
                   ),
                   Expanded(
-                    child: Text(
-                      quest.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: quest.completed == true
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
-                        decoration: quest.completed == true
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          quest.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: quest.completed == true
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                            decoration: quest.completed == true
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                        if (quest.reminderTime != null &&
+                            quest.reminderTime!.trim().isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.schedule,
+                                    size: 14, color: AppColors.textTertiary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  quest.reminderTime!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textTertiary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+
+                  // ✅ 수정/삭제 메뉴
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _openQuestForm(context, quest: quest);
+                      } else if (value == 'delete') {
+                        _confirmDeleteQuest(context, quest.id);
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('수정')),
+                      PopupMenuItem(value: 'delete', child: Text('삭제')),
+                    ],
                   ),
                 ],
               ),
@@ -217,7 +202,8 @@ class QuestsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 48.0),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: difficultyColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -250,6 +236,7 @@ class QuestsScreen extends StatelessWidget {
     }
   }
 
+  // ✅ 완료 처리(기존 로직 그대로 + 업적 팝업)
   Future<void> _completeQuest(
       BuildContext context,
       Quest quest,
@@ -275,7 +262,9 @@ class QuestsScreen extends StatelessWidget {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${quest.title} 완료! (+${quest.goldReward}G, +${quest.expReward}EXP)'),
+        content: Text(
+          '${quest.title} 완료! (+${quest.goldReward}G, +${quest.expReward}EXP)',
+        ),
         backgroundColor: AppColors.statusSuccess,
         duration: const Duration(seconds: 2),
       ),
@@ -331,6 +320,250 @@ class QuestsScreen extends StatelessWidget {
             child: const Text('확인'),
           ),
         ],
+      ),
+    );
+  }
+
+  // ==========================
+  // ✅ 추가/수정/삭제 UI 연결
+  // ==========================
+
+  void _openQuestForm(BuildContext context, {Quest? quest}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _QuestFormSheet(existing: quest),
+    );
+  }
+
+  void _confirmDeleteQuest(BuildContext context, String questId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('삭제하겠습니까?'),
+        content: const Text('퀘스트 삭제 시 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await context.read<UserDataProvider>().deleteQuest(questId);
+            },
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestFormSheet extends StatefulWidget {
+  final Quest? existing;
+  const _QuestFormSheet({this.existing});
+
+  @override
+  State<_QuestFormSheet> createState() => _QuestFormSheetState();
+}
+
+class _QuestFormSheetState extends State<_QuestFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _title;
+  late final TextEditingController _exp;
+  late final TextEditingController _gold;
+
+  Difficulty _difficulty = Difficulty.normal;
+  TimeOfDay? _time;
+
+  @override
+  void initState() {
+    super.initState();
+    final q = widget.existing;
+
+    _title = TextEditingController(text: q?.title ?? '');
+    _exp = TextEditingController(text: (q?.expReward ?? 10).toString());
+    _gold = TextEditingController(text: (q?.goldReward ?? 0).toString());
+    _difficulty = q?.difficulty ?? Difficulty.normal;
+
+    // ✅ 기존 시간(HH:mm) 파싱
+    final rt = q?.reminderTime;
+    if (rt != null && rt.contains(':')) {
+      final parts = rt.split(':');
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h != null && m != null) {
+        _time = TimeOfDay(hour: h, minute: m);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _exp.dispose();
+    _gold.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.existing != null;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  isEdit ? '퀘스트 수정' : '퀘스트 추가',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            TextFormField(
+              controller: _title,
+              decoration: const InputDecoration(labelText: '제목'),
+              validator: (v) =>
+              (v == null || v.trim().isEmpty) ? '제목을 입력해줘' : null,
+            ),
+            const SizedBox(height: 12),
+
+            DropdownButtonFormField<Difficulty>(
+              value: _difficulty,
+              decoration: const InputDecoration(labelText: '난이도'),
+              items: Difficulty.values
+                  .map((d) =>
+                  DropdownMenuItem(value: d, child: Text(d.displayName)))
+                  .toList(),
+              onChanged: (v) =>
+                  setState(() => _difficulty = v ?? Difficulty.normal),
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _exp,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'EXP 보상'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _gold,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Gold 보상'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ✅ 시간 선택
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.schedule),
+                    label: Text(
+                      _time == null ? '시간 선택(선택)' : _time!.format(context),
+                    ),
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _time ?? TimeOfDay.now(),
+                      );
+                      if (picked != null) setState(() => _time = picked);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (_time != null)
+                  IconButton(
+                    tooltip: '시간 제거',
+                    onPressed: () => setState(() => _time = null),
+                    icon: const Icon(Icons.clear),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  if (!_formKey.currentState!.validate()) return;
+
+                  final provider = context.read<UserDataProvider>();
+                  final title = _title.text.trim();
+                  final exp = int.tryParse(_exp.text) ?? 10;
+                  final gold = int.tryParse(_gold.text) ?? 0;
+
+                  // ✅ HH:mm 저장
+                  String? reminderTime;
+                  if (_time != null) {
+                    final hh = _time!.hour.toString().padLeft(2, '0');
+                    final mm = _time!.minute.toString().padLeft(2, '0');
+                    reminderTime = '$hh:$mm';
+                  }
+
+                  if (isEdit) {
+                    await provider.updateQuest(
+                      questId: widget.existing!.id,
+                      title: title,
+                      difficulty: _difficulty,
+                      expReward: exp,
+                      goldReward: gold,
+                      reminderTime: reminderTime,
+                    );
+                  } else {
+                    await provider.addQuest(
+                      title: title,
+                      difficulty: _difficulty,
+                      expReward: exp,
+                      goldReward: gold,
+                      reminderTime: reminderTime,
+                    );
+                  }
+
+                  if (!mounted) return;
+                  Navigator.pop(context);
+                },
+                child: Text(isEdit ? '수정 완료' : '추가'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

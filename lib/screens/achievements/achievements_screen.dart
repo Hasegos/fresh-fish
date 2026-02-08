@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../providers/user_data_provider.dart';
@@ -7,9 +6,6 @@ import '../../models/models.dart';
 
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({Key? key}) : super(key: key);
-
-  static const String _devTitle = '[DEV] 업적 테스트: 퀘스트 화면에서 팝업';
-  static const String _devIcon = '🧪';
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +42,12 @@ class AchievementsScreen extends StatelessWidget {
             );
           }
 
-          final achievements = _buildOrderedAchievements(userData.achievements);
+          // ✅ DEV 업적이 데이터에 남아있더라도 화면에서는 숨김
+          final filteredRaw = userData.achievements
+              .where((a) => !a.title.startsWith('[DEV]'))
+              .toList();
+
+          final achievements = _buildOrderedAchievements(filteredRaw);
 
           final unlockedCount = achievements.where((a) => a.unlocked).length;
           final totalCount = achievements.length;
@@ -69,24 +70,6 @@ class AchievementsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (!kReleaseMode) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.12)),
-                    ),
-                    child: const Text(
-                      '개발자용 업적이 포함됩니다. 릴리즈 빌드에서는 자동으로 숨겨집니다.',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -99,12 +82,9 @@ class AchievementsScreen extends StatelessWidget {
                   itemCount: achievements.length,
                   itemBuilder: (context, index) {
                     final a = achievements[index];
-                    final isDev = (!kReleaseMode && a.title == _devTitle);
-
                     return _buildAchievementCard(
                       context,
                       a,
-                      isDev: isDev,
                       onTap: null,
                     );
                   },
@@ -163,7 +143,6 @@ class AchievementsScreen extends StatelessWidget {
   Widget _buildAchievementCard(
       BuildContext context,
       _AchievementVM achievement, {
-        required bool isDev,
         required VoidCallback? onTap,
       }) {
     final isUnlocked = achievement.unlocked;
@@ -173,11 +152,9 @@ class AchievementsScreen extends StatelessWidget {
         color: isUnlocked ? AppColors.surface : AppColors.background,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDev
-              ? Colors.orange.withOpacity(0.45)
-              : (isUnlocked
+          color: isUnlocked
               ? AppColors.primaryPastel.withOpacity(0.3)
-              : AppColors.borderLight),
+              : AppColors.borderLight,
         ),
       ),
       child: Column(
@@ -207,8 +184,8 @@ class AchievementsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           if (!isUnlocked)
-            Icon(
-              isDev ? Icons.build : Icons.lock,
+            const Icon(
+              Icons.lock,
               size: 16,
               color: AppColors.textTertiary,
             ),
@@ -253,7 +230,7 @@ class AchievementsScreen extends StatelessWidget {
   }
 
   List<_AchievementSeed> _achievementOrder() {
-    final base = <_AchievementSeed>[
+    return const <_AchievementSeed>[
       _AchievementSeed('첫 퀘스트 만들기 (퀘스트 1개 생성)', '📝'),
       _AchievementSeed('첫 클리어 (퀘스트 1개 완료)', '✅'),
       _AchievementSeed('첫 보상 수령 (보상/코인/경험치 첫 획득)', '💰'),
@@ -285,12 +262,6 @@ class AchievementsScreen extends StatelessWidget {
       _AchievementSeed('정리왕 (완료/아카이브 정리 20회)', '🗂️'),
       _AchievementSeed('완벽한 한 주 (주간 목표 100% 달성 1회)', '💯'),
     ];
-
-    if (!kReleaseMode) {
-      base.insert(0, const _AchievementSeed(_devTitle, _devIcon));
-    }
-
-    return base;
   }
 }
 
