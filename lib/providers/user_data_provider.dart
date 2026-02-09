@@ -3,21 +3,6 @@ import '../models/models.dart' as m;
 import '../services/storage_service.dart';
 
 class UserDataProvider extends ChangeNotifier {
-
-  /// aquarium_screen.dart 등에서 쓰는 호환용 메서드
-  /// - 기존 코드가 completeQuestById(questId)를 호출하므로,
-  ///   내부에서 quest를 찾아 completeQuest()를 호출한다.
-  Future<List<m.Achievement>> completeQuestById(String questId) async {
-    if (_userData == null) return [];
-
-    final quest = _userData!.quests.firstWhere(
-          (q) => q.id == questId,
-      orElse: () => throw Exception('Quest not found: $questId'),
-    );
-
-    return completeQuest(questId, quest.expReward, quest.goldReward);
-  }
-
   m.UserData? _userData;
   bool _isLoading = true;
 
@@ -131,16 +116,8 @@ class UserDataProvider extends ChangeNotifier {
       );
     });
 
-    // ✅ 퀘스트 생성 업적(첫 생성) 처리
-    // quests 길이가 1 이상이면 "첫 퀘스트 만들기" 조건 충족
-    final createdCount = _userData!.quests.length;
-    if (createdCount >= 1) {
-      await unlockAchievement(
-        title: '첫 퀘스트 만들기 (퀘스트 1개 생성)',
-        icon: '📝',
-        description: '퀘스트를 1개 생성했습니다.',
-      );
-    }
+    // (선택) "첫 퀘스트 만들기" 업적 등 체크를 여기서 추가할 수 있음
+    // await checkAndUnlockAchievements();
   }
 
   /// 퀘스트 수정
@@ -151,8 +128,8 @@ class UserDataProvider extends ChangeNotifier {
     required String questId,
     required String title,
     required m.Difficulty difficulty,
-    required int expReward,
-    required int goldReward,
+    int? expReward,
+    int? goldReward,
     String? reminderTime,
   }) async {
     if (_userData == null) return;
@@ -164,8 +141,8 @@ class UserDataProvider extends ChangeNotifier {
         return q.copyWith(
           title: title,
           difficulty: difficulty,
-          expReward: expReward,
-          goldReward: goldReward,
+          expReward: expReward ?? q.expReward,
+          goldReward: goldReward ?? q.goldReward,
           reminderTime: reminderTime,
         );
       }).toList();
@@ -328,6 +305,18 @@ class UserDataProvider extends ChangeNotifier {
 
     return newlyUnlocked;
   }
+
+  Future<List<m.Achievement>> completeQuestById(String questId) async {
+    if (_userData == null) return [];
+
+    final quest = _userData!.quests.firstWhere(
+          (q) => q.id == questId,
+      orElse: () => throw Exception('Quest not found: $questId'),
+    );
+
+    return completeQuest(questId, quest.expReward, quest.goldReward);
+  }
+
 
   // =============================
   // 기타

@@ -376,8 +376,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _title;
-  late final TextEditingController _exp;
-  late final TextEditingController _gold;
 
   Difficulty _difficulty = Difficulty.normal;
   TimeOfDay? _time;
@@ -388,8 +386,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
     final q = widget.existing;
 
     _title = TextEditingController(text: q?.title ?? '');
-    _exp = TextEditingController(text: (q?.expReward ?? 10).toString());
-    _gold = TextEditingController(text: (q?.goldReward ?? 0).toString());
     _difficulty = q?.difficulty ?? Difficulty.normal;
 
     // ✅ 기존 시간(HH:mm) 파싱
@@ -407,8 +403,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
   @override
   void dispose() {
     _title.dispose();
-    _exp.dispose();
-    _gold.dispose();
     super.dispose();
   }
 
@@ -467,27 +461,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
             ),
             const SizedBox(height: 12),
 
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _exp,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'EXP 보상'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _gold,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Gold 보상'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
             // ✅ 시간 선택
             Row(
               children: [
@@ -526,8 +499,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
 
                   final provider = context.read<UserDataProvider>();
                   final title = _title.text.trim();
-                  final exp = int.tryParse(_exp.text) ?? 10;
-                  final gold = int.tryParse(_gold.text) ?? 0;
 
                   // ✅ HH:mm 저장
                   String? reminderTime;
@@ -542,16 +513,12 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
                       questId: widget.existing!.id,
                       title: title,
                       difficulty: _difficulty,
-                      expReward: exp,
-                      goldReward: gold,
                       reminderTime: reminderTime,
                     );
                   } else {
                     await provider.addQuest(
                       title: title,
                       difficulty: _difficulty,
-                      expReward: exp,
-                      goldReward: gold,
                       reminderTime: reminderTime,
                     );
                   }
