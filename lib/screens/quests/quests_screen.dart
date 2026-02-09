@@ -109,10 +109,14 @@ class QuestsScreen extends StatelessWidget {
       UserDataProvider provider,
       ) {
     final difficultyColor = _getDifficultyColor(quest.difficulty);
+
     final hasTime =
         quest.reminderTime != null && quest.reminderTime!.trim().isNotEmpty;
 
     final isChecked = quest.completed == true;
+
+    // ✅ 미체크 테두리 색(= 체크 시 배경색으로 쓸 색)
+    final uncheckedBorderColor = Colors.grey.shade500;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -135,28 +139,27 @@ class QuestsScreen extends StatelessWidget {
                     ? null
                     : (_) => _completeQuest(context, quest, provider),
 
-                // ✅ 체크/미체크 배경색 제어
+                // ✅ 체크되면: 미체크 테두리색과 동일한 배경
+                // ✅ 미체크면: 흰색 배경
                 fillColor: MaterialStateProperty.resolveWith<Color>((states) {
                   final selected = states.contains(MaterialState.selected);
-                  return selected ? Colors.black : Colors.white;
+                  return selected ? uncheckedBorderColor : Colors.white;
                 }),
 
-                // ✅ 체크 모양(✓)은 흰색
+                // ✅ 체크 모양은 흰색
                 checkColor: Colors.white,
 
-                // ✅ 테두리도 상태에 따라
+                // ✅ 테두리는 항상 "미체크 테두리색" 유지
                 side: BorderSide(
-                  color: isChecked ? Colors.black : Colors.grey.shade300,
+                  color: uncheckedBorderColor,
                   width: 2,
                 ),
 
-                // (선택) 모서리 느낌 조금 부드럽게
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
 
-              // ✅ 체크박스 > 제목 > 시간대 (한 줄)
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -203,7 +206,6 @@ class QuestsScreen extends StatelessWidget {
                 ),
               ),
 
-              // ✅ 수정/삭제 메뉴
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'edit') {
@@ -223,6 +225,7 @@ class QuestsScreen extends StatelessWidget {
       ),
     );
   }
+
 
   Color _getDifficultyColor(Difficulty difficulty) {
     switch (difficulty) {
