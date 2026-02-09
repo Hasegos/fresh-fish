@@ -77,17 +77,15 @@ class QuestsScreen extends StatelessWidget {
             ),
           ),
           const Spacer(),
-
           IconButton(
             onPressed: () => _openQuestForm(context),
             icon: const Icon(Icons.add, color: AppColors.textPrimary),
             tooltip: '퀘스트 추가',
           ),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primaryPastel.withOpacity(0.12),
+              color: AppColors.primaryPastel.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -111,112 +109,113 @@ class QuestsScreen extends StatelessWidget {
       UserDataProvider provider,
       ) {
     final difficultyColor = _getDifficultyColor(quest.difficulty);
+    final hasTime =
+        quest.reminderTime != null && quest.reminderTime!.trim().isNotEmpty;
+
+    final isChecked = quest.completed == true;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
         decoration: BoxDecoration(
-          color: quest.completed == true
-              ? AppColors.statusSuccess.withOpacity(0.08)
-              : AppColors.surface,
+          color: difficultyColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: quest.completed == true
-                ? AppColors.statusSuccess.withOpacity(0.2)
-                : AppColors.borderLight,
+            color: difficultyColor.withValues(alpha: 0.20),
           ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: quest.completed == true,
-                    onChanged: (quest.completed == true)
-                        ? null
-                        : (_) => _completeQuest(context, quest, provider),
-                    activeColor: AppColors.statusSuccess,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          quest.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: quest.completed == true
-                                ? AppColors.textSecondary
-                                : AppColors.textPrimary,
-                            decoration: quest.completed == true
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
+              Checkbox(
+                value: isChecked,
+                onChanged: isChecked
+                    ? null
+                    : (_) => _completeQuest(context, quest, provider),
+
+                // ✅ 체크/미체크 배경색 제어
+                fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+                  final selected = states.contains(MaterialState.selected);
+                  return selected ? Colors.black : Colors.white;
+                }),
+
+                // ✅ 체크 모양(✓)은 흰색
+                checkColor: Colors.white,
+
+                // ✅ 테두리도 상태에 따라
+                side: BorderSide(
+                  color: isChecked ? Colors.black : Colors.grey.shade300,
+                  width: 2,
+                ),
+
+                // (선택) 모서리 느낌 조금 부드럽게
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+
+              // ✅ 체크박스 > 제목 > 시간대 (한 줄)
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        quest.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isChecked
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                          decoration:
+                          isChecked ? TextDecoration.lineThrough : null,
                         ),
-                        if (quest.reminderTime != null &&
-                            quest.reminderTime!.trim().isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.schedule,
-                                    size: 14, color: AppColors.textTertiary),
-                                const SizedBox(width: 4),
-                                Text(
-                                  quest.reminderTime!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textTertiary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                      ),
+                    ),
+                    if (hasTime) ...[
+                      const SizedBox(width: 10),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            quest.reminderTime!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-
-                  // ✅ 수정/삭제 메뉴
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _openQuestForm(context, quest: quest);
-                      } else if (value == 'delete') {
-                        _confirmDeleteQuest(context, quest.id);
-                      }
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('수정')),
-                      PopupMenuItem(value: 'delete', child: Text('삭제')),
+                        ],
+                      ),
                     ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 48.0),
-                child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: difficultyColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    quest.difficulty.displayName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: difficultyColor,
-                    ),
-                  ),
+                  ],
                 ),
+              ),
+
+              // ✅ 수정/삭제 메뉴
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _openQuestForm(context, quest: quest);
+                  } else if (value == 'delete') {
+                    _confirmDeleteQuest(context, quest.id);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('수정')),
+                  PopupMenuItem(value: 'delete', child: Text('삭제')),
+                ],
               ),
             ],
           ),
@@ -228,11 +227,11 @@ class QuestsScreen extends StatelessWidget {
   Color _getDifficultyColor(Difficulty difficulty) {
     switch (difficulty) {
       case Difficulty.easy:
-        return AppColors.statusSuccess;
+        return Colors.green;
       case Difficulty.normal:
-        return AppColors.primaryPastel;
+        return Colors.amber;
       case Difficulty.hard:
-        return AppColors.highlightPink;
+        return Colors.red;
     }
   }
 
@@ -388,7 +387,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
     _title = TextEditingController(text: q?.title ?? '');
     _difficulty = q?.difficulty ?? Difficulty.normal;
 
-    // ✅ 기존 시간(HH:mm) 파싱
     final rt = q?.reminderTime;
     if (rt != null && rt.contains(':')) {
       final parts = rt.split(':');
@@ -440,7 +438,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
               ],
             ),
             const SizedBox(height: 8),
-
             TextFormField(
               controller: _title,
               decoration: const InputDecoration(labelText: '제목'),
@@ -448,7 +445,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
               (v == null || v.trim().isEmpty) ? '제목을 입력해줘' : null,
             ),
             const SizedBox(height: 12),
-
             DropdownButtonFormField<Difficulty>(
               value: _difficulty,
               decoration: const InputDecoration(labelText: '난이도'),
@@ -460,8 +456,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
                   setState(() => _difficulty = v ?? Difficulty.normal),
             ),
             const SizedBox(height: 12),
-
-            // ✅ 시간 선택
             Row(
               children: [
                 Expanded(
@@ -488,9 +482,7 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
                   ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -500,7 +492,6 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
                   final provider = context.read<UserDataProvider>();
                   final title = _title.text.trim();
 
-                  // ✅ HH:mm 저장
                   String? reminderTime;
                   if (_time != null) {
                     final hh = _time!.hour.toString().padLeft(2, '0');
