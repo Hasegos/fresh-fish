@@ -1,6 +1,7 @@
 import 'fish_model.dart';
 import 'quest_model.dart';
 import 'timer_model.dart';
+import '../data/timer_categories.dart';
 
 /// [PlacedDecoration]
 /// 어항 내에 실제 배치된 장식의 정보를 담습니다.
@@ -198,6 +199,7 @@ class UserData {
   final List<PlacedDecoration> decorations;
   final List<String> ownedDecorations;
   final List<TimerSession> timerSessions;
+  final List<TimerCategory> timerCategories;
 
   UserData({
     required this.id,
@@ -217,6 +219,7 @@ class UserData {
     required this.decorations,
     required this.ownedDecorations,
     required this.timerSessions,
+    required this.timerCategories,
   });
 
   // --- UI 편의를 위한 계산 로직 (Getters) ---
@@ -278,6 +281,13 @@ class UserData {
       timerSessions: (json['timerSessions'] as List<dynamic>?)
           ?.map((e) => TimerSession.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
+        timerCategories: (json['timerCategories'] as List<dynamic>?)
+          ?.map((e) => TimerCategory(
+            name: (e as Map<String, dynamic>)['name'] as String,
+            icon: (e)['icon'] as String,
+            color: (e)['color'] as String,
+            ))
+          .toList() ?? defaultTimerCategories,
     );
   }
 
@@ -300,6 +310,9 @@ class UserData {
       'decorations': decorations.map((e) => e.toJson()).toList(),
       'ownedDecorations': ownedDecorations,
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
+      'timerCategories': timerCategories
+          .map((e) => {'name': e.name, 'icon': e.icon, 'color': e.color})
+          .toList(),
     };
   }
 
@@ -321,6 +334,7 @@ class UserData {
     List<PlacedDecoration>? decorations,
     List<String>? ownedDecorations,
     List<TimerSession>? timerSessions,
+    List<TimerCategory>? timerCategories,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -340,6 +354,7 @@ class UserData {
       decorations: decorations ?? this.decorations,
       ownedDecorations: ownedDecorations ?? this.ownedDecorations,
       timerSessions: timerSessions ?? this.timerSessions,
+      timerCategories: timerCategories ?? this.timerCategories,
     );
   }
 }

@@ -1,94 +1,54 @@
-import 'package:flutter/material.dart'; // UI 기본 위젯
-import 'package:provider/provider.dart'; // 상태관리 접근
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-// 앱 공통 색/텍스트 스타일
 import '../../theme/app_colors.dart';
-import '../../theme/app_text_styles.dart';
+import '../../providers/user_data_provider.dart';
+import '../../widgets/common/cards.dart';
+import '../../models/models.dart';
 
-import '../../providers/user_data_provider.dart'; // 퀘스트/습관 데이터와 CRUD 로직을 가진 Provider
-import '../../widgets/common/cards.dart'; // 공통 카드/상태 UI 위젯
-import '../../widgets/common/dialogs.dart'; // CommonDialogs.showInputDialog,
-// showChoiceDialog, showConfirmDialog, showBottomSheet 제공
-import '../../models/models.dart'; // UserData, Quest, Habit, Difficulty,
-// Category, QuestsType 등 모델/enum.
-
-//  ✅ QuestsScreen 위젯
-// 퀘스트/습관 목록 화면
-// StatelessWidth : 내부 상태 없이 Provider 상태 변화로만 리빌드
 class QuestsScreen extends StatelessWidget {
   const QuestsScreen({Key? key}) : super(key: key);
 
-  // 💡 화면 전체 구성
   @override
   Widget build(BuildContext context) {
-    return Scaffold( // 화면 골격(배경, body)
+    return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea( // 노치/상단바 영역 피해서 UI 배치
-        child: Consumer<UserDataProvider>( // Provider 값이 바뀌면 builder 재실행 -> UI 갱신
-          builder: (context, provider, child) { // builder로 provider를 받아서 데이터 기반 렌더링
-            if (provider.isLoading) { // 로딩 중이라면 리스트 대신 로딩 위젯 표시
+      body: SafeArea(
+        child: Consumer<UserDataProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
               return const LoadingIndicator(message: '로딩 중...');
             }
 
-            // userData null 처리
-            // 데이터가 아직 없거나 로드 실패 등으로 null이라면 에러 상태 UI
             final userData = provider.userData;
             if (userData == null) {
               return const EmptyState(
-                message: '사용자 데이터를 불러올 수 없습니다',
+                message: '데이터를 불러올 수 없습니다',
                 icon: Icons.error_outline,
               );
             }
 
-            // 실제 데이터 추출 및 카테고리 목록 준비
-            // toList()로 새 리스트 생성
-            final quests = userData.quests.toList();
-            final habits = userData.habits.toList();
+            final allQuests = userData.quests.toList();
 
-            // categories : 선택된 카테고리가 있으면 그걸,
-            // 없으면 전체 카테고리 사용
-            final categories = _availableCategories(userData);
-
-            // 메인 UI 레이아웃(Header + List)
-            return Column( // 위에 헤더, 아래에 리스트
+            return Column(
               children: [
-                _buildHeader( // 상단 타이틀 + 추가 버튼 + 완료/전체 카운트
-                  context,
-                  quests,
-                      () => _addQuest(context, provider, categories),
-                ),
-                Expanded( // 리스트가 남은 영역 전부 채우도록
-                  child: ListView( // 스크롤 가능한 목록
+                _buildHeader(context, allQuests),
+                Expanded(
+                  child: allQuests.isEmpty
+                      ? const EmptyState(
+                    message: '진행 중인 퀘스트가 없습니다',
+                    icon: Icons.task_alt,
+                  )
+                      : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    children: [
-                      if (quests.isEmpty)
-                        _buildEmptyText('등록된 퀘스트가 없습니다')
-                      else
-                        ...quests.map(
-                              (q) => _buildQuestCard(context, q, provider),
-                        ),
-                      const SizedBox(height: 16),
-                      _buildSectionHeader(
-                        '습관',
-                            () => _openHabitForm(
-                          context,
-                          provider,
-                          categories,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (habits.isEmpty)
-                        _buildEmptyText('등록된 습관이 없습니다')
-                      else
-                        ...habits.map(
-                              (h) => _buildHabitCard(
-                            context,
-                            h,
-                            provider,
-                            categories,
-                          ),
-                        ),
-                    ],
+                    itemCount: allQuests.length,
+                    itemBuilder: (context, index) {
+                      return _buildQuestCard(
+                        context,
+                        allQuests[index],
+                        provider,
+                      );
+                    },
                   ),
                 ),
               ],
@@ -99,24 +59,13 @@ class QuestsScreen extends StatelessWidget {
     );
   }
 
-  List<String> _availableCategories(UserData userData) {
-    // 카테고리 선택값 우선
-    // 없으면 전체 카테고리 이름 목록
-    if (userData.selectedCategories.isNotEmpty) {
-      return userData.selectedCategories;
-    }
-    return Category.values.map((e) => e.displayName).toList();
-  }
-
-  Widget _buildHeader(
-      BuildContext context,
-      List<Quest> quests,
-      VoidCallback onAddQuest,
-      ) {
-    final completed = quests.where((q) => q.completed).length;
+  // ✅ 헤더 (+ 추가 버튼 포함)
+  Widget _buildHeader(BuildContext context, List<Quest> quests) {
+    final completed = quests.where((q) => q.completed == true).length;
+    final total = quests.length;
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
           const Text(
@@ -129,21 +78,22 @@ class QuestsScreen extends StatelessWidget {
           ),
           const Spacer(),
           IconButton(
-            onPressed: onAddQuest,
-            icon: const Icon(Icons.add_circle_outline),
-            color: AppColors.primaryPastel,
+            onPressed: () => _openQuestForm(context),
+            icon: const Icon(Icons.add, color: AppColors.textPrimary),
+            tooltip: '퀘스트 추가',
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primaryPastel.withOpacity(0.12),
+              color: AppColors.primaryPastel.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '$completed/${quests.length} 완료',
+              '$completed/$total 완료',
               style: const TextStyle(
-                color: AppColors.primaryPastel,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: AppColors.primaryPastel,
               ),
             ),
           ),
@@ -152,172 +102,116 @@ class QuestsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, VoidCallback onAdd) {
-    return Row(
-      children: [
-        Text(title, style: AppTextStyles.h4),
-        const Spacer(),
-        IconButton(
-          onPressed: onAdd,
-          icon: const Icon(Icons.add_circle_outline),
-          color: AppColors.primaryPastel,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyText(String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        message,
-        style: AppTextStyles.bodySmall,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
+  // ✅ 카드 (완료 + 수정/삭제 메뉴 + 시간 표시)
   Widget _buildQuestCard(
       BuildContext context,
       Quest quest,
       UserDataProvider provider,
       ) {
-    final color = _difficultyColor(quest.difficulty);
+    final difficultyColor = _getDifficultyColor(quest.difficulty);
+
+    final hasTime =
+        quest.reminderTime != null && quest.reminderTime!.trim().isNotEmpty;
+
+    final isChecked = quest.completed == true;
+
+    // ✅ 미체크 테두리 색(= 체크 시 배경색으로 쓸 색)
+    final uncheckedBorderColor = Colors.grey.shade500;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
         decoration: BoxDecoration(
-          color: quest.completed
-              ? AppColors.statusSuccess.withOpacity(0.08)
-              : AppColors.surface,
+          color: difficultyColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: quest.completed
-                ? AppColors.statusSuccess.withOpacity(0.2)
-                : AppColors.borderLight,
+            color: difficultyColor.withValues(alpha: 0.20),
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Checkbox(
-                    value: quest.completed,
-                    onChanged: quest.completed
-                        ? null
-                        : (_) => _completeQuest(context, quest, provider),
-                  ),
-                  Expanded(
-                    child: Text(
-                      quest.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        decoration:
-                        quest.completed ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (v) async {
-                      if (v == 'edit') {
-                        await _editQuest(context, provider, quest);
-                      } else {
-                        await _deleteQuest(context, provider, quest);
-                      }
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('수정')),
-                      PopupMenuItem(value: 'delete', child: Text('삭제')),
-                    ],
-                  ),
-                ],
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.only(left: 48),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    quest.difficulty.displayName,
-                    style: TextStyle(color: color),
-                  ),
+              Checkbox(
+                value: isChecked,
+                onChanged: isChecked
+                    ? null
+                    : (_) => _completeQuest(context, quest, provider),
+
+                // ✅ 체크되면: 미체크 테두리색과 동일한 배경
+                // ✅ 미체크면: 흰색 배경
+                fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+                  final selected = states.contains(MaterialState.selected);
+                  return selected ? uncheckedBorderColor : Colors.white;
+                }),
+
+                // ✅ 체크 모양은 흰색
+                checkColor: Colors.white,
+
+                // ✅ 테두리는 항상 "미체크 테두리색" 유지
+                side: BorderSide(
+                  color: uncheckedBorderColor,
+                  width: 2,
+                ),
+
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildHabitCard(
-      BuildContext context,
-      Habit habit,
-      UserDataProvider provider,
-      List<String> categories,
-      ) {
-    final color = _difficultyColor(habit.difficulty);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => provider.completeHabit(habit.id),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Row(
-            children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      habit.title,
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(fontWeight: FontWeight.w600),
+                    Expanded(
+                      child: Text(
+                        quest.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isChecked
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                          decoration:
+                          isChecked ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
                     ),
-                    Text(habit.category, style: AppTextStyles.bodySmall),
+                    if (hasTime) ...[
+                      const SizedBox(width: 10),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            quest.reminderTime!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('${habit.completionCount}회'),
-                  Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(habit.difficulty.displayName),
-                  ),
-                ],
-              ),
+
               PopupMenuButton<String>(
-                onSelected: (v) async {
-                  if (v == 'edit') {
-                    await _openHabitForm(
-                      context,
-                      provider,
-                      categories,
-                      habit: habit,
-                    );
-                  } else {
-                    await _deleteHabit(context, provider, habit);
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _openQuestForm(context, quest: quest);
+                  } else if (value == 'delete') {
+                    _confirmDeleteQuest(context, quest.id);
                   }
                 },
                 itemBuilder: (_) => const [
@@ -332,295 +226,302 @@ class QuestsScreen extends StatelessWidget {
     );
   }
 
-  Color _difficultyColor(Difficulty d) {
-    switch (d) {
+
+  Color _getDifficultyColor(Difficulty difficulty) {
+    switch (difficulty) {
       case Difficulty.easy:
-        return AppColors.statusSuccess;
+        return Colors.green;
       case Difficulty.normal:
-        return AppColors.primaryPastel;
+        return Colors.amber;
       case Difficulty.hard:
-        return AppColors.highlightPink;
+        return Colors.red;
     }
   }
 
+  // ✅ 완료 처리(기존 로직 그대로 + 업적 팝업)
   Future<void> _completeQuest(
       BuildContext context,
       Quest quest,
       UserDataProvider provider,
       ) async {
-    await provider.completeQuestById(quest.id);
+    List<Achievement> newlyUnlocked = [];
+
+    try {
+      newlyUnlocked = await provider.completeQuest(
+        quest.id,
+        quest.expReward,
+        quest.goldReward,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('퀘스트 완료 처리 실패: $e')),
+      );
+      return;
+    }
+
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${quest.title} 완료!')),
-    );
-  }
-
-  /// ✅ 수정: rootNavigator context 저장/재사용 제거 + await 후 mounted 체크
-  Future<void> _addQuest(
-      BuildContext context,
-      UserDataProvider provider,
-      List<String> categories,
-      ) async {
-    if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final title = await CommonDialogs.showInputDialog(
-      context,
-      title: '퀘스트 추가',
-      hint: '퀘스트 이름',
-      confirmText: '추가',
-    );
-
-    if (!context.mounted) return;
-    if (title == null || title.trim().isEmpty) return;
-
-    final category = await CommonDialogs.showChoiceDialog<String>(
-      context,
-      title: '카테고리 선택',
-      choices: categories.map((c) => ChoiceItem(label: c, value: c)).toList(),
-    );
-
-    if (!context.mounted) return;
-    if (category == null) return;
-
-    final difficulty = await CommonDialogs.showChoiceDialog<Difficulty>(
-      context,
-      title: '난이도 선택',
-      choices: Difficulty.values
-          .map((d) => ChoiceItem(label: d.displayName, value: d))
-          .toList(),
-    );
-
-    if (!context.mounted) return;
-    if (difficulty == null) return;
-
-    await provider.createQuest(
-      title: title.trim(),
-      category: category,
-      difficulty: difficulty,
-      questType: QuestType.sub,
-    );
-  }
-
-  Future<void> _editQuest(
-      BuildContext context,
-      UserDataProvider provider,
-      Quest quest,
-      ) async {
-    if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final title = await CommonDialogs.showInputDialog(
-      rootContext,
-      title: '퀘스트 수정',
-      initialValue: quest.title,
-      confirmText: '저장',
-    );
-
-    if (!context.mounted) return;
-    if (title == null || title.trim().isEmpty) return;
-
-    await provider.updateQuest(quest.copyWith(title: title.trim()));
-  }
-
-  Future<void> _deleteQuest(
-      BuildContext context,
-      UserDataProvider provider,
-      Quest quest,
-      ) async {
-    if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final ok = await CommonDialogs.showConfirmDialog(
-      rootContext,
-      title: '퀘스트 삭제',
-      message: '"${quest.title}"을 삭제할까요?',
-      isDangerous: true,
-    );
-
-    if (!context.mounted || !ok) return;
-    await provider.deleteQuest(quest.id);
-  }
-
-  Future<void> _openHabitForm(
-      BuildContext context,
-      UserDataProvider provider,
-      List<String> categories, {
-        Habit? habit,
-      }) async {
-    if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final result = await CommonDialogs.showBottomSheet<HabitFormResult>(
-      context,
-      child: HabitFormSheet(
-        habit: habit,
-        categories: categories,
+      SnackBar(
+        content: Text(
+          '${quest.title} 완료! (+${quest.goldReward}G, +${quest.expReward}EXP)',
+        ),
+        backgroundColor: AppColors.statusSuccess,
+        duration: const Duration(seconds: 2),
       ),
     );
 
-    if (!context.mounted || result == null) return;
-
-    if (habit == null) {
-      await provider.createHabit(
-        title: result.title,
-        category: result.category,
-        difficulty: result.difficulty,
-      );
-    } else {
-      await provider.updateHabit(
-        habit.copyWith(
-          title: result.title,
-          category: result.category,
-          difficulty: result.difficulty,
-        ),
-      );
+    for (final a in newlyUnlocked) {
+      if (!context.mounted) return;
+      _showAchievementPopup(context, icon: a.icon, title: a.title);
     }
   }
 
-  Future<void> _deleteHabit(
-      BuildContext context,
-      UserDataProvider provider,
-      Habit habit,
-      ) async {
-    if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final ok = await CommonDialogs.showConfirmDialog(
-      rootContext,
-      title: '습관 삭제',
-      message: '"${habit.title}"을 삭제할까요?',
-      isDangerous: true,
+  void _showAchievementPopup(
+      BuildContext context, {
+        required String icon,
+        required String title,
+      }) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('업적 달성'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(icon, style: const TextStyle(fontSize: 30)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '계속 진행해보자',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
     );
+  }
 
-    if (!context.mounted || !ok) return;
-    await provider.deleteHabit(habit.id);
+  // ==========================
+  // ✅ 추가/수정/삭제 UI 연결
+  // ==========================
+
+  void _openQuestForm(BuildContext context, {Quest? quest}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _QuestFormSheet(existing: quest),
+    );
+  }
+
+  void _confirmDeleteQuest(BuildContext context, String questId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('삭제하겠습니까?'),
+        content: const Text('퀘스트 삭제 시 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await context.read<UserDataProvider>().deleteQuest(questId);
+            },
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class HabitFormResult {
-  final String title;
-  final String category;
-  final Difficulty difficulty;
-
-  HabitFormResult({
-    required this.title,
-    required this.category,
-    required this.difficulty,
-  });
-}
-
-class HabitFormSheet extends StatefulWidget {
-  final Habit? habit;
-  final List<String> categories;
-
-  const HabitFormSheet({
-    super.key,
-    this.habit,
-    required this.categories,
-  });
+class _QuestFormSheet extends StatefulWidget {
+  final Quest? existing;
+  const _QuestFormSheet({this.existing});
 
   @override
-  State<HabitFormSheet> createState() => _HabitFormSheetState();
+  State<_QuestFormSheet> createState() => _QuestFormSheetState();
 }
 
-class _HabitFormSheetState extends State<HabitFormSheet> {
-  late final TextEditingController _titleController;
-  late String _category;
-  late Difficulty _difficulty;
+class _QuestFormSheetState extends State<_QuestFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _title;
+
+  Difficulty _difficulty = Difficulty.normal;
+  TimeOfDay? _time;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.habit?.title ?? '');
-    _category = widget.habit?.category ?? widget.categories.first;
-    _difficulty = widget.habit?.difficulty ?? Difficulty.normal;
+    final q = widget.existing;
+
+    _title = TextEditingController(text: q?.title ?? '');
+    _difficulty = q?.difficulty ?? Difficulty.normal;
+
+    final rt = q?.reminderTime;
+    if (rt != null && rt.contains(':')) {
+      final parts = rt.split(':');
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h != null && m != null) {
+        _time = TimeOfDay(hour: h, minute: m);
+      }
+    }
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
+    _title.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = widget.habit != null;
+    final isEdit = widget.existing != null;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        ),
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Form(
+        key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(isEdit ? '습관 수정' : '습관 추가', style: AppTextStyles.h3),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: '습관 이름',
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Row(
+              children: [
+                Text(
+                  isEdit ? '퀘스트 수정' : '퀘스트 추가',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _category,
-              items: widget.categories
-                  .map(
-                    (c) => DropdownMenuItem(
-                  value: c,
-                  child: Text(c),
-                ),
-              )
-                  .toList(),
-              onChanged: (v) => setState(() => _category = v!),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _title,
+              decoration: const InputDecoration(labelText: '제목'),
+              validator: (v) =>
+              (v == null || v.trim().isEmpty) ? '제목을 입력해줘' : null,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<Difficulty>(
               value: _difficulty,
+              decoration: const InputDecoration(labelText: '난이도'),
               items: Difficulty.values
-                  .map(
-                    (d) => DropdownMenuItem(
-                  value: d,
-                  child: Text(d.displayName),
-                ),
-              )
+                  .map((d) =>
+                  DropdownMenuItem(value: d, child: Text(d.displayName)))
                   .toList(),
-              onChanged: (v) => setState(() => _difficulty = v!),
+              onChanged: (v) =>
+                  setState(() => _difficulty = v ?? Difficulty.normal),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('취소'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final title = _titleController.text.trim();
-                      if (title.isEmpty) return;
-                      Navigator.of(context).pop(
-                        HabitFormResult(
-                          title: title,
-                          category: _category,
-                          difficulty: _difficulty,
-                        ),
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.schedule),
+                    label: Text(
+                      _time == null ? '시간 선택(선택)' : _time!.format(context),
+                    ),
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _time ?? TimeOfDay.now(),
                       );
+                      if (picked != null) setState(() => _time = picked);
                     },
-                    child: Text(isEdit ? '저장' : '추가'),
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (_time != null)
+                  IconButton(
+                    tooltip: '시간 제거',
+                    onPressed: () => setState(() => _time = null),
+                    icon: const Icon(Icons.clear),
+                  ),
               ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  if (!_formKey.currentState!.validate()) return;
+
+                  final provider = context.read<UserDataProvider>();
+                  final title = _title.text.trim();
+
+                  String? reminderTime;
+                  if (_time != null) {
+                    final hh = _time!.hour.toString().padLeft(2, '0');
+                    final mm = _time!.minute.toString().padLeft(2, '0');
+                    reminderTime = '$hh:$mm';
+                  }
+
+                  if (isEdit) {
+                    await provider.updateQuest(
+                      questId: widget.existing!.id,
+                      title: title,
+                      difficulty: _difficulty,
+                      reminderTime: reminderTime,
+                    );
+                  } else {
+                    await provider.addQuest(
+                      title: title,
+                      difficulty: _difficulty,
+                      reminderTime: reminderTime,
+                    );
+                  }
+
+                  if (!mounted) return;
+                  Navigator.pop(context);
+                },
+                child: Text(isEdit ? '수정 완료' : '추가'),
+              ),
             ),
           ],
         ),

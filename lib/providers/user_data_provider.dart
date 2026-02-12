@@ -1,290 +1,331 @@
 import 'package:flutter/foundation.dart';
-import '../models/models.dart';
+import '../models/models.dart' as m;
 import '../services/storage_service.dart';
-import '../utils/quest_utils.dart';
 
-/// 사용자 데이터 상태 관리 Provider
-/// [Why] 앱 전체에서 유저 정보(골드, 물고기 상태 등)를 공유하기 위해 사용합니다.
 class UserDataProvider extends ChangeNotifier {
-  UserData? _userData;
+  m.UserData? _userData;
   bool _isLoading = true;
 
-  // StorageService 인스턴스 생성
   final StorageService _storageService = StorageService();
 
-  // Getters
-  UserData? get userData => _userData;
+  m.UserData? get userData => _userData;
   bool get isLoading => _isLoading;
   bool get isOnboardingComplete => _userData?.onboardingCompleted ?? false;
 
-  /// 초기화
-  /// [How] 앱 시작 시 저장된 데이터를 불러옵니다.
+  // =============================
+  // 초기화 / 로드 / 저장
+  // =============================
+
   Future<void> initialize() async {
     _isLoading = true;
-    notifyListeners(); // 로딩 시작 알림
+    notifyListeners();
 
-    print("🚀 [Provider LOG 1] 데이터 로딩 시작...");
+    debugPrint('[UserDataProvider] initialize: start loading');
     try {
       _userData = await _storageService.getUserData().timeout(
         const Duration(seconds: 3),
         onTimeout: () {
-          debugPrint('⚠️ UserDataProvider Storage 로딩 타임아웃');
+          debugPrint('[UserDataProvider] storage load timeout');
           return null;
         },
       );
-      print("🚀 [Provider LOG 2] 데이터 로딩 성공: ${_userData != null}");
+      debugPrint('[UserDataProvider] initialize: loaded = ${_userData != null}');
     } catch (e) {
-      print("❌ [Provider ERROR] 로딩 중 에러 발생: $e");
-      debugPrint('Error loading user data: $e');
+      debugPrint('[UserDataProvider] initialize error: $e');
       _userData = null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint('[UserDataProvider] initialize: done');
     }
-
-    _isLoading = false;
-    notifyListeners(); // 로딩 종료 알림
-    print("🚀 [Provider LOG 3] 초기화 프로세스 종료");
   }
 
-  /// 사용자 데이터 새로고침
   Future<void> refreshUserData() async {
     try {
       _userData = await _storageService.getUserData();
       notifyListeners();
     } catch (e) {
-      debugPrint('Error refreshing user data: $e');
+      debugPrint('[UserDataProvider] refresh error: $e');
     }
   }
 
-  /// 사용자 데이터 저장
-  Future<void> saveUserData(UserData data) async {
+  Future<void> saveUserData(m.UserData data) async {
     _userData = data;
     notifyListeners();
     await _storageService.saveUserData(data);
   }
 
-  /// 사용자 데이터 업데이트 (함수형 업데이트)
-  Future<void> updateUserData(UserData Function(UserData) updater) async {
-    if (_userData != null) {
-      _userData = updater(_userData!);
-      notifyListeners();
-      await _storageService.saveUserData(_userData!);
-    }
+  Future<void> updateUserData(m.UserData Function(m.UserData) updater) async {
+    if (_userData == null) return;
+
+    _userData = updater(_userData!);
+    notifyListeners();
+    await _storageService.saveUserData(_userData!);
   }
 
-  /// 특정 항목 업데이트 메서드들
-  Future<void> updateFish(Fish fish) async {
-    if (_userData != null) {
-      await updateUserData((data) => data.copyWith(fish: fish));
-    }
+  Future<void> updateFish(m.Fish fish) async {
+    if (_userData == null) return;
+    await updateUserData((data) => data.copyWith(fish: fish));
   }
 
   Future<void> updateGold(int gold) async {
-    if (_userData != null) {
-      await updateUserData((data) => data.copyWith(gold: gold));
-    }
+    if (_userData == null) return;
+    await updateUserData((data) => data.copyWith(gold: gold));
   }
 
   Future<void> addGold(int amount) async {
-    if (_userData != null) {
-      await updateGold(_userData!.gold + amount);
-    }
-  }
-
-  /// ???????? ???
-  Future<void> completeQuest(String questId, int expGain, int goldGain) async {
     if (_userData == null) return;
-
-    final updatedQuests = _userData!.quests.map((q) {
-      if (q.id == questId) {
-        return q.copyWith(completed: true);
-      }
-      return q;
-    }).toList();
-
-    await _applyRewards(
-      exp: expGain,
-      gold: goldGain,
-      updater: (data) => data.copyWith(quests: updatedQuests),
-    );
+    await updateGold(_userData!.gold + amount);
   }
 
-  Future<void> completeQuestById(String questId) async {
-    if (_userData == null) return;
-    final quest = _userData!.quests.firstWhere((q) => q.id == questId);
-    if (quest.completed) return;
-    await completeQuest(questId, quest.expReward, quest.goldReward);
-  }
+  // =============================
+  // ✅ Quest CRUD (추가/수정/삭제) + 시간(reminderTime)
+  // =============================
 
-  Future<void> createQuest({
+  /// 퀘스트 추가
+  ///
+  /// - reminderTime: "HH:mm" (예: "09:30") / 없으면 null
+  /// - category: 지금 UI에서 카테고리 선택이 없으니 기본값 "공부"로 처리
+  Future<void> addQuest({
     required String title,
-    required String category,
-    required Difficulty difficulty,
-    QuestType questType = QuestType.sub,
-    String? date,
+    required m.Difficulty difficulty,
+    int expReward = 10,
+    int goldReward = 0,
+    String? reminderTime,
+    String? category,
+    m.QuestType? questType,
+  }) async {
+    if (_userData == null) return;
+
+    final newQuest = m.Quest(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      title: title,
+      category: category ?? '공부',
+      completed: false,
+      date: _userData!.currentDate, // "YYYY-MM-DD"
+      reminderTime: reminderTime,
+      expReward: expReward,
+      goldReward: goldReward,
+      questType: questType ?? m.QuestType.values.first,
+      difficulty: difficulty,
+    );
+
+    await updateUserData((data) {
+      return data.copyWith(
+        quests: [...data.quests, newQuest],
+      );
+    });
+
+    // (선택) "첫 퀘스트 만들기" 업적 등 체크를 여기서 추가할 수 있음
+    // await checkAndUnlockAchievements();
+  }
+
+  /// 퀘스트 수정
+  ///
+  /// ⚠️ Quest.copyWith가 프로젝트마다 다를 수 있어서
+  /// 여기서는 "제목/난이도/보상/시간"만 수정하도록 구성.
+  Future<void> updateQuest({
+    required String questId,
+    required String title,
+    required m.Difficulty difficulty,
+    int? expReward,
+    int? goldReward,
     String? reminderTime,
   }) async {
     if (_userData == null) return;
-    final quest = QuestUtils.createQuest(
-      category: category,
-      date: date ?? _userData!.currentDate,
-      difficulty: difficulty,
-      type: questType,
-      customTitle: title,
-      reminderTime: reminderTime,
-    );
-    await updateUserData((data) => data.copyWith(
-          quests: [...data.quests, quest],
-        ));
+
+    await updateUserData((data) {
+      final updated = data.quests.map((q) {
+        if (q.id != questId) return q;
+
+        return q.copyWith(
+          title: title,
+          difficulty: difficulty,
+          expReward: expReward ?? q.expReward,
+          goldReward: goldReward ?? q.goldReward,
+          reminderTime: reminderTime,
+        );
+      }).toList();
+
+      return data.copyWith(quests: updated);
+    });
+
+    // (선택) "첫 수정" 업적 등
+    // await checkAndUnlockAchievements();
   }
 
-  Future<void> updateQuest(Quest updated) async {
-    if (_userData == null) return;
-    final updatedQuests = _userData!.quests
-        .map((quest) => quest.id == updated.id ? updated : quest)
-        .toList();
-    await updateUserData((data) => data.copyWith(quests: updatedQuests));
-  }
-
+  /// 퀘스트 삭제
   Future<void> deleteQuest(String questId) async {
     if (_userData == null) return;
-    final updatedQuests =
-        _userData!.quests.where((quest) => quest.id != questId).toList();
-    await updateUserData((data) => data.copyWith(quests: updatedQuests));
-  }
 
-  Future<void> createHabit({
-    required String title,
-    required String category,
-    required Difficulty difficulty,
-  }) async {
-    if (_userData == null) return;
-    final habit = QuestUtils.createHabit(
-      title: title,
-      category: category,
-      difficulty: difficulty,
-    );
-    await updateUserData((data) => data.copyWith(
-          habits: [...data.habits, habit],
-        ));
-  }
-
-  Future<void> updateHabit(Habit updated) async {
-    if (_userData == null) return;
-    final updatedHabits = _userData!.habits
-        .map((habit) => habit.id == updated.id ? updated : habit)
-        .toList();
-    await updateUserData((data) => data.copyWith(habits: updatedHabits));
-  }
-
-  Future<void> deleteHabit(String habitId) async {
-    if (_userData == null) return;
-    final updatedHabits =
-        _userData!.habits.where((habit) => habit.id != habitId).toList();
-    await updateUserData((data) => data.copyWith(habits: updatedHabits));
-  }
-
-  Future<void> completeHabit(String habitId) async {
-    if (_userData == null) return;
-    final now = DateTime.now();
-
-    final updatedHabits = _userData!.habits.map((habit) {
-      if (habit.id != habitId) return habit;
-
-      final lastCompletedAt = habit.lastCompletedAt;
-      final lastDate = lastCompletedAt == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(lastCompletedAt);
-      final isSameDay = lastDate != null &&
-          lastDate.year == now.year &&
-          lastDate.month == now.month &&
-          lastDate.day == now.day;
-      final isYesterday = lastDate != null &&
-          lastDate.year == now.year &&
-          lastDate.month == now.month &&
-          lastDate.day == now.day - 1;
-
-      final nextCompletionCount =
-          isSameDay ? habit.completionCount + 1 : 1;
-      final nextComboCount = isSameDay
-          ? habit.comboCount
-          : (isYesterday ? (habit.comboCount ?? 0) + 1 : 1);
-
-      return habit.copyWith(
-        completionCount: nextCompletionCount,
-        totalCompletions: habit.totalCompletions + 1,
-        lastCompletedAt: now.millisecondsSinceEpoch,
-        comboCount: nextComboCount,
+    await updateUserData((data) {
+      return data.copyWith(
+        quests: data.quests.where((q) => q.id != questId).toList(),
       );
+    });
+  }
+
+  // =============================
+  // ✅ 퀘스트 완료 + 업적 연동(팝업용 반환)
+  // =============================
+
+  Future<List<m.Achievement>> completeQuest(
+      String questId,
+      int expGain,
+      int goldGain,
+      ) async {
+    if (_userData == null) return [];
+
+    final beforeCompleted =
+        _userData!.quests.where((q) => q.completed == true).length;
+
+    final updatedQuests = _userData!.quests.map((q) {
+      if (q.id == questId) return q.copyWith(completed: true);
+      return q;
     }).toList();
 
-    final habit = _userData!.habits.firstWhere((h) => h.id == habitId);
-    await _applyRewards(
-      exp: habit.expReward,
-      gold: habit.goldReward,
-      updater: (data) => data.copyWith(habits: updatedHabits),
-    );
-  }
-
-  Future<void> _applyRewards({
-    required int exp,
-    required int gold,
-    required UserData Function(UserData) updater,
-  }) async {
-    var currentExp = _userData!.fish.exp + exp;
-    var currentLevel = _userData!.fish.level;
-
-    while (currentExp >= 100) {
-      currentExp -= 100;
-      currentLevel++;
-    }
-
+    // exp/gold 반영 (fish.copyWith(exp: ...)가 없으면 여기서 에러남 → 알려줘!)
     final updatedFish = _userData!.fish.copyWith(
-      level: currentLevel,
-      exp: currentExp,
-      hp: (_userData!.fish.hp + 5).clamp(0, 100),
+      exp: _userData!.fish.exp + expGain,
     );
-
-    await updateUserData(
-      (data) => updater(data).copyWith(
-        fish: updatedFish,
-        gold: data.gold + gold,
-        waterQuality: (data.waterQuality + 3).clamp(0, 100),
-      ),
-    );
-  }
-
-  // 👇 [새로 추가된 메서드 1: 장식 구매]
-  /// [Why] 상점에서 아이템을 구매할 때 골드를 차감하고 소유 목록에 추가하기 위해 필요합니다.
-  /// [How] 골드가 충분한지 확인한 후, copyWith를 통해 기존 데이터를 업데이트합니다.
-  Future<bool> purchaseDecoration(String decorationId, int price) async {
-    if (_userData == null) return false;
-
-    // 1. 골드 부족 여부 체크
-    if (_userData!.gold < price) {
-      print("❌ 골드가 부족하여 구매할 수 없습니다.");
-      return false;
-    }
-
-    // 2. 소유 목록 업데이트 및 골드 차감
-    final updatedOwned = [..._userData!.ownedDecorations, decorationId];
 
     await updateUserData((data) => data.copyWith(
-      gold: data.gold - price,
-      ownedDecorations: updatedOwned,
+      quests: updatedQuests,
+      gold: data.gold + goldGain,
+      fish: updatedFish,
     ));
 
-    print("✅ 장식 구매 성공: $decorationId");
-    return true;
+    final afterCompleted =
+        _userData!.quests.where((q) => q.completed == true).length;
+
+    // 완료 개수가 늘어난 경우에만 업적 체크
+    if (afterCompleted <= beforeCompleted) return [];
+
+    final newlyUnlocked = await checkAndUnlockAchievements();
+    return newlyUnlocked;
   }
 
-  // 👇 [새로 추가된 메서드 2: 메인으로 이동]
-  /// [Why] 화면의 뒤로가기 버튼 등을 눌렀을 때 상태를 관리하거나 알림을 주기 위해 사용합니다.
+  // =============================
+  // ✅ 업적(Unlock) 로직
+  // =============================
+
+  Future<m.Achievement?> unlockAchievement({
+    required String title,
+    required String icon,
+    String description = '',
+  }) async {
+    if (_userData == null) return null;
+
+    final achievements = List<m.Achievement>.from(_userData!.achievements);
+    final idx = achievements.indexWhere((a) => a.title == title);
+
+    if (idx != -1) {
+      final current = achievements[idx];
+      if (current.unlocked == true) return null;
+
+      final updated = m.Achievement(
+        id: current.id,
+        title: current.title,
+        description: current.description,
+        icon: current.icon.isNotEmpty ? current.icon : icon,
+        unlocked: true,
+      );
+
+      achievements[idx] = updated;
+      await updateUserData((data) => data.copyWith(achievements: achievements));
+      return updated;
+    }
+
+    final created = m.Achievement(
+      id: title,
+      title: title,
+      description: description,
+      icon: icon,
+      unlocked: true,
+    );
+
+    achievements.add(created);
+    await updateUserData((data) => data.copyWith(achievements: achievements));
+    return created;
+  }
+
+  Future<List<m.Achievement>> checkAndUnlockAchievements() async {
+    if (_userData == null) return [];
+
+    final newlyUnlocked = <m.Achievement>[];
+
+    final quests = _userData!.quests;
+    final completedCount = quests.where((q) => q.completed == true).length;
+
+    // ✅ 예시: 완료 개수 기반 업적
+    if (completedCount >= 1) {
+      final a = await unlockAchievement(
+        title: '첫 클리어 (퀘스트 1개 완료)',
+        icon: '✅',
+        description: '퀘스트를 1개 완료했습니다.',
+      );
+      if (a != null) newlyUnlocked.add(a);
+    }
+
+    if (completedCount >= 10) {
+      final a = await unlockAchievement(
+        title: '10개 완료',
+        icon: '🔟',
+        description: '퀘스트를 10개 완료했습니다.',
+      );
+      if (a != null) newlyUnlocked.add(a);
+    }
+
+    if (completedCount >= 25) {
+      final a = await unlockAchievement(
+        title: '25개 완료',
+        icon: '🏅',
+        description: '퀘스트를 25개 완료했습니다.',
+      );
+      if (a != null) newlyUnlocked.add(a);
+    }
+
+    if (completedCount >= 50) {
+      final a = await unlockAchievement(
+        title: '50개 완료',
+        icon: '🥈',
+        description: '퀘스트를 50개 완료했습니다.',
+      );
+      if (a != null) newlyUnlocked.add(a);
+    }
+
+    if (completedCount >= 100) {
+      final a = await unlockAchievement(
+        title: '100개 완료',
+        icon: '🥇',
+        description: '퀘스트를 100개 완료했습니다.',
+      );
+      if (a != null) newlyUnlocked.add(a);
+    }
+
+    return newlyUnlocked;
+  }
+
+  Future<List<m.Achievement>> completeQuestById(String questId) async {
+    if (_userData == null) return [];
+
+    final quest = _userData!.quests.firstWhere(
+          (q) => q.id == questId,
+      orElse: () => throw Exception('Quest not found: $questId'),
+    );
+
+    return completeQuest(questId, quest.expReward, quest.goldReward);
+  }
+
+
+  // =============================
+  // 기타
+  // =============================
+
   void backToMain() {
-    // 현재는 알림(notifyListeners)만 주지만,
-    // 나중에 특정 페이지 인덱스를 0(메인)으로 바꾸는 로직 등을 여기에 넣을 수 있습니다.
     notifyListeners();
   }
 
-  /// 데이터 초기화 (로그아웃 등)
   Future<void> reset() async {
     _userData = null;
     notifyListeners();

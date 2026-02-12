@@ -4,7 +4,6 @@ import 'dart:math';
 import '../../providers/user_data_provider.dart';
 import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
-import '../../models/quest_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/habit_progress_section.dart';
 
@@ -222,78 +221,83 @@ class _AquariumScreenState extends State<AquariumScreen>
   }
 
   Widget _buildHUD(BuildContext context, Fish fish, int gold) {
-    const expToNextLevel = 100;
-    final double expProgress = (fish.exp / expToNextLevel).clamp(0.0, 1.0);
+    final progress = (fish.exp / 100).clamp(0.0, 1.0);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Fish icon and level
-        Row(
-          children: [
-            Text(
-              fish.type.emoji,
-              style: const TextStyle(fontSize: 28),
-            ),
-            const SizedBox(width: 8),
-            Column(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            fish.type.emoji,
+            style: const TextStyle(fontSize: 20),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 90,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Lv. ${fish.level}',
+                  'Lv.${fish.level}',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(
-                  width: 120,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: expProgress,
-                      minHeight: 6,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryPastel,
-                      ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: AppColors.surfaceAlt,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryPastel,
                     ),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        // Coin display
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.highlightPink.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.highlightPink.withOpacity(0.3),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('💰', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(
+                  gold.toString(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('💰', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 4),
-              Text(
-                gold.toString(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -337,147 +341,11 @@ class _AquariumScreenState extends State<AquariumScreen>
           todos: userData.todos,
           onQuestToggle: (questId) =>
               context.read<UserDataProvider>().completeQuestById(questId),
+          onDailyQuestTap: () => widget.onNavChanged?.call(1),
         ),
       ),
     );
   }
 
-  Widget _buildActiveTodosList(BuildContext context, UserData userData) {
-    // Filter active todos
-    final activeTodos = userData.quests
-        .where((q) =>
-            q.questType == QuestType.daily &&
-            q.date == userData.currentDate &&
-            !q.completed)
-        .toList();
 
-    if (activeTodos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              '🎉',
-              style: TextStyle(fontSize: 48),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'All tasks completed!',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: activeTodos.length,
-      itemBuilder: (context, index) {
-        final todo = activeTodos[index];
-        return _buildTodoCard(todo);
-      },
-    );
-  }
-
-  Widget _buildTodoCard(Quest quest) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.borderLight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _getDifficultyColor(quest.difficulty),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  quest.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getDifficultyLabel(quest.difficulty),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _getDifficultyColor(quest.difficulty),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.accentPastel.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '+10',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.accentPastel,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getDifficultyColor(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return AppColors.statusSuccess;
-      case Difficulty.normal:
-        return AppColors.primaryPastel;
-      case Difficulty.hard:
-        return AppColors.highlightPink;
-    }
-  }
-
-  String _getDifficultyLabel(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return '쉬움';
-      case Difficulty.normal:
-        return '보통';
-      case Difficulty.hard:
-        return '어려움';
-    }
-  }
 }
