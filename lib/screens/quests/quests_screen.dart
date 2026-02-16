@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,6 +61,7 @@ class QuestsScreen extends StatelessWidget {
   }
 
   // ✅ 헤더 (+ 추가 버튼 포함)
+  //  - 큰 퀘스트 UI 표시는 제거(요청사항)
   Widget _buildHeader(BuildContext context, List<Quest> quests) {
     final completed = quests.where((q) => q.completed == true).length;
     final total = quests.length;
@@ -103,6 +105,7 @@ class QuestsScreen extends StatelessWidget {
   }
 
   // ✅ 카드 (완료 + 수정/삭제 메뉴 + 시간 표시)
+  //  - 큰 퀘스트 뱃지 UI 제거(요청사항)
   Widget _buildQuestCard(
       BuildContext context,
       Quest quest,
@@ -135,9 +138,7 @@ class QuestsScreen extends StatelessWidget {
             children: [
               Checkbox(
                 value: isChecked,
-                onChanged: isChecked
-                    ? null
-                    : (_) => _completeQuest(context, quest, provider),
+                onChanged: isChecked ? null : (_) => _completeQuest(context, quest),
 
                 // ✅ 체크되면: 미체크 테두리색과 동일한 배경
                 // ✅ 미체크면: 흰색 배경
@@ -146,10 +147,9 @@ class QuestsScreen extends StatelessWidget {
                   return selected ? uncheckedBorderColor : Colors.white;
                 }),
 
-                // ✅ 체크 모양은 흰색
                 checkColor: Colors.white,
 
-                // ✅ 테두리는 항상 "미체크 테두리색" 유지
+                // ✅ 테두리는 항상 동일
                 side: BorderSide(
                   color: uncheckedBorderColor,
                   width: 2,
@@ -159,7 +159,6 @@ class QuestsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -175,8 +174,7 @@ class QuestsScreen extends StatelessWidget {
                           color: isChecked
                               ? AppColors.textSecondary
                               : AppColors.textPrimary,
-                          decoration:
-                          isChecked ? TextDecoration.lineThrough : null,
+                          decoration: isChecked ? TextDecoration.lineThrough : null,
                         ),
                       ),
                     ),
@@ -206,18 +204,50 @@ class QuestsScreen extends StatelessWidget {
                 ),
               ),
 
+              // ✅ 메뉴: 수정/삭제 + (디버그일 때만) DEV 테스트 항목
               PopupMenuButton<String>(
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'edit') {
                     _openQuestForm(context, quest: quest);
-                  } else if (value == 'delete') {
+                    return;
+                  }
+                  if (value == 'delete') {
                     _confirmDeleteQuest(context, quest.id);
+                    return;
+                  }
+
+                  // ✅ DEV: 큰 퀘스트 완료 팝업 테스트(Condition B)
+                  if (kDebugMode && value == 'dev_big_b') {
+                    await _devCompleteAsBigQuestByChecklist(context, quest);
+                    return;
+                  }
+
+                  // ✅ DEV: 큰 퀘스트 완료 팝업 테스트(Condition A)
+                  if (kDebugMode && value == 'dev_big_a') {
+                    await _devCompleteAsBigQuestByTimer(context, quest);
+                    return;
                   }
                 },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('수정')),
-                  PopupMenuItem(value: 'delete', child: Text('삭제')),
-                ],
+                itemBuilder: (_) {
+                  final items = <PopupMenuEntry<String>>[
+                    const PopupMenuItem(value: 'edit', child: Text('수정')),
+                    const PopupMenuItem(value: 'delete', child: Text('삭제')),
+                  ];
+
+                  if (kDebugMode) {
+                    items.add(const PopupMenuDivider());
+                    items.add(const PopupMenuItem(
+                      value: 'dev_big_b',
+                      child: Text('DEV: 큰 퀘스트(체크리스트 5개)로 완료'),
+                    ));
+                    items.add(const PopupMenuItem(
+                      value: 'dev_big_a',
+                      child: Text('DEV: 큰 퀘스트(타이머 60분)로 완료'),
+                    ));
+                  }
+
+                  return items;
+                },
               ),
             ],
           ),
@@ -225,7 +255,6 @@ class QuestsScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Color _getDifficultyColor(Difficulty difficulty) {
     switch (difficulty) {
@@ -238,12 +267,10 @@ class QuestsScreen extends StatelessWidget {
     }
   }
 
-  // ✅ 완료 처리(기존 로직 그대로 + 업적 팝업)
-  Future<void> _completeQuest(
-      BuildContext context,
-      Quest quest,
-      UserDataProvider provider,
-      ) async {
+  // ✅ 일반 완료 처리
+  //  - newlyUnlocked를 "한 개씩" 순차 팝업 (요청사항)
+  Future<void> _completeQuest(BuildContext context, Quest quest) async {
+    final provider = context.read<UserDataProvider>();
     List<Achievement> newlyUnlocked = [];
 
     try {
@@ -272,19 +299,94 @@ class QuestsScreen extends StatelessWidget {
       ),
     );
 
+    // ✅ 이번 완료로 새로 해금된 업적만 "하나씩" 팝업
     for (final a in newlyUnlocked) {
       if (!context.mounted) return;
-      _showAchievementPopup(context, icon: a.icon, title: a.title);
+      await _showAchievementPopup(context, icon: a.icon, title: a.title);
     }
   }
 
-  void _showAchievementPopup(
+  // ✅ DEV: 큰 퀘스트 완료 테스트(Condition B)
+  // - 체크리스트 완료 개수 ≥ 5
+  Future<void> _devCompleteAsBigQuestByChecklist(
+      BuildContext context,
+      Quest quest,
+      ) async {
+    final provider = context.read<UserDataProvider>();
+    List<Achievement> newlyUnlocked = [];
+
+    try {
+      await provider.setQuestChecklistCompletedCount(
+        questId: quest.id,
+        completedCount: 5,
+      );
+
+      newlyUnlocked = await provider.completeQuest(
+        quest.id,
+        quest.expReward,
+        quest.goldReward,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('DEV 큰 퀘스트(B) 테스트 실패: $e')),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    for (final a in newlyUnlocked) {
+      if (!context.mounted) return;
+      await _showAchievementPopup(context, icon: a.icon, title: a.title);
+    }
+  }
+
+  // ✅ DEV: 큰 퀘스트 완료 테스트(Condition A)
+  // - 타이머 ≥ 60분 AND 난이도 ≥ normal
+  Future<void> _devCompleteAsBigQuestByTimer(
+      BuildContext context,
+      Quest quest,
+      ) async {
+    final provider = context.read<UserDataProvider>();
+    List<Achievement> newlyUnlocked = [];
+
+    try {
+      await provider.addQuestDurationMinutes(
+        questId: quest.id,
+        addMinutes: 60,
+      );
+
+      newlyUnlocked = await provider.completeQuest(
+        quest.id,
+        quest.expReward,
+        quest.goldReward,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('DEV 큰 퀘스트(A) 테스트 실패: $e')),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    for (final a in newlyUnlocked) {
+      if (!context.mounted) return;
+      await _showAchievementPopup(context, icon: a.icon, title: a.title);
+    }
+  }
+
+  // ✅ 업적 팝업: await 가능한 형태로 변경(= 닫힐 때까지 대기)
+  Future<void> _showAchievementPopup(
       BuildContext context, {
         required String icon,
         required String title,
-      }) {
-    showDialog(
+      }) async {
+    await showDialog(
       context: context,
+      barrierDismissible: false, // 바깥 터치로 닫히지 않게(원하면 true로)
       builder: (_) => AlertDialog(
         title: const Text('업적 달성'),
         content: Column(
@@ -452,8 +554,12 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
               value: _difficulty,
               decoration: const InputDecoration(labelText: '난이도'),
               items: Difficulty.values
-                  .map((d) =>
-                  DropdownMenuItem(value: d, child: Text(d.displayName)))
+                  .map(
+                    (d) => DropdownMenuItem(
+                  value: d,
+                  child: Text(d.displayName),
+                ),
+              )
                   .toList(),
               onChanged: (v) =>
                   setState(() => _difficulty = v ?? Difficulty.normal),
