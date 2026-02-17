@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import '../models/user_data_model.dart';
 import '../models/fish_model.dart';
 import '../models/quest_model.dart';
+import '../models/timer_model.dart';
+import '../data/timer_categories.dart';
 import '../utils/quest_utils.dart';
 import 'firebase_service.dart';
 
@@ -14,6 +16,7 @@ class StorageService {
   StorageService._internal();
 
   static const String _userDataKey = 'user_data';
+  static const String _timerStateKey = 'timer_state';
   final FirebaseService _firebaseService = FirebaseService();
   final Uuid _uuid = const Uuid();
 
@@ -78,6 +81,25 @@ class StorageService {
     }
   }
 
+  Future<void> saveTimerState(TimerState state) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = json.encode(state.toJson());
+    await prefs.setString(_timerStateKey, jsonString);
+  }
+
+  Future<TimerState?> getTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_timerStateKey);
+    if (jsonString == null) return null;
+    final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+    return TimerState.fromJson(jsonMap);
+  }
+
+  Future<void> clearTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_timerStateKey);
+  }
+
   /// 초기 사용자 생성
   UserData createInitialUser(
     FishType fishType,
@@ -111,6 +133,8 @@ class StorageService {
       decorations: [],
       ownedDecorations: [],
       timerSessions: [],
+      timerCategories: defaultTimerCategories,
+      pomodoroSettings: const PomodoroSettings(),
     );
   }
 

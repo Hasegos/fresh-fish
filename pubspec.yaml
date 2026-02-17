@@ -38,6 +38,13 @@ dependencies:
   cloud_firestore: ^6.1.1
   cloud_functions: ^6.0.5
   http: ^1.2.0
+  flutter_local_notifications: ^17.1.2
+  timezone: ^0.9.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  connectivity_plus: ^5.0.0
+  fl_chart: ^0.63.0
+  table_calendar: ^3.0.9
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

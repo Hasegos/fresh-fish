@@ -8,6 +8,7 @@ class HabitProgressSection extends StatelessWidget {
   final List<ToDo> todos;
   final Function(String)? onQuestToggle;
   final Function(String)? onTodoToggle;
+  final VoidCallback? onDailyQuestTap;
 
   const HabitProgressSection({
     Key? key,
@@ -15,6 +16,7 @@ class HabitProgressSection extends StatelessWidget {
     required this.todos,
     this.onQuestToggle,
     this.onTodoToggle,
+    this.onDailyQuestTap,
   }) : super(key: key);
 
   @override
@@ -22,12 +24,20 @@ class HabitProgressSection extends StatelessWidget {
     final dailies = todayQuests
         .where((q) => q.questType == QuestType.daily)
         .toList();
+    
+    // [Fix] 완료된 미션은 홈 화면에서 제거
+    final activeDailies = dailies.where((q) => !q.completed).toList();
+    
+    // 진행도 계산은 전체 기준으로 (완료된 것도 포함)
     final completedDailies = dailies.where((q) => q.completed).length;
     final dailyProgress = dailies.isNotEmpty
         ? (completedDailies / dailies.length) * 100
         : 0.0;
 
     final activeTodos = todos.where((t) => !t.completed).toList();
+    final completedText = completedDailies == 1
+      ? '1 Mission Completed'
+      : '$completedDailies Missions Completed';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,49 +52,53 @@ class HabitProgressSection extends StatelessWidget {
         const SizedBox(height: 12),
 
         // 일일 진행도 개요
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '일일 퀘스트',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
+        InkWell(
+          onTap: onDailyQuestTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '일일 퀘스트',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '$completedDailies/${dailies.length}',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFAED581),
+                    Text(
+                      completedText,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFAED581),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildProgressBar(dailyProgress),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildProgressBar(dailyProgress),
+              ],
+            ),
           ),
         ),
 
         const SizedBox(height: 12),
 
         // 일일 항목들
-        ...dailies.take(5).map((quest) => Padding(
+        ...activeDailies.take(5).map((quest) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _buildQuestItem(quest),
             )),
@@ -97,7 +111,7 @@ class HabitProgressSection extends StatelessWidget {
           ),
 
         // 빈 상태
-        if (dailies.isEmpty && activeTodos.isEmpty)
+        if (activeDailies.isEmpty && activeTodos.isEmpty)
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(

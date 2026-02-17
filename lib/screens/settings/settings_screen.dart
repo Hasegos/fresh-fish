@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/app_provider.dart';
+import '../../models/user_data_model.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
 import '../achievements/achievements_screen.dart';
@@ -13,6 +14,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AppProvider>();
+    final pomodoro = p.userData?.pomodoroSettings ?? const PomodoroSettings();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -66,6 +68,68 @@ class SettingsScreen extends StatelessWidget {
                           title: '언어',
                           subtitle: '한국어',
                           onTap: () => _showComingSoon(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildSection(
+                      title: 'Pomodoro',
+                      children: [
+                        _buildPomodoroToggle(context, pomodoro, p),
+                        _buildPomodoroTile(
+                          context,
+                          title: '집중 시간',
+                          value: '${pomodoro.focusMinutes}분',
+                          onTap: () => _editPomodoroMinutes(
+                            context,
+                            label: '집중 시간 (분)',
+                            initialValue: pomodoro.focusMinutes,
+                            onSaved: (value) => p.updatePomodoroSettings(
+                              pomodoro.copyWith(focusMinutes: value),
+                            ),
+                          ),
+                        ),
+                        _buildPomodoroTile(
+                          context,
+                          title: '짧은 휴식',
+                          value: '${pomodoro.shortBreakMinutes}분',
+                          onTap: () => _editPomodoroMinutes(
+                            context,
+                            label: '짧은 휴식 (분)',
+                            initialValue: pomodoro.shortBreakMinutes,
+                            onSaved: (value) => p.updatePomodoroSettings(
+                              pomodoro.copyWith(shortBreakMinutes: value),
+                            ),
+                          ),
+                        ),
+                        _buildPomodoroTile(
+                          context,
+                          title: '긴 휴식',
+                          value: '${pomodoro.longBreakMinutes}분',
+                          onTap: () => _editPomodoroMinutes(
+                            context,
+                            label: '긴 휴식 (분)',
+                            initialValue: pomodoro.longBreakMinutes,
+                            onSaved: (value) => p.updatePomodoroSettings(
+                              pomodoro.copyWith(longBreakMinutes: value),
+                            ),
+                          ),
+                        ),
+                        _buildPomodoroTile(
+                          context,
+                          title: '세션 수',
+                          value: '${pomodoro.sessionsPerCycle}회',
+                          onTap: () => _editPomodoroMinutes(
+                            context,
+                            label: '세션 수',
+                            initialValue: pomodoro.sessionsPerCycle,
+                            minValue: 2,
+                            maxValue: 8,
+                            onSaved: (value) => p.updatePomodoroSettings(
+                              pomodoro.copyWith(sessionsPerCycle: value),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -225,6 +289,122 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // -------------------------
+  // Pomodoro settings
+  // -------------------------
+
+  Widget _buildPomodoroToggle(BuildContext context, PomodoroSettings settings, AppProvider p) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.timer, color: AppColors.secondaryPastel),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Pomodoro Mode',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Switch(
+            value: settings.enabled,
+            onChanged: (value) => p.togglePomodoro(value),
+            activeColor: AppColors.primaryPastel,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPomodoroTile(
+    BuildContext context, {
+      required String title,
+      required String value,
+      required VoidCallback onTap,
+    }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editPomodoroMinutes(
+    BuildContext context, {
+      required String label,
+      required int initialValue,
+      int minValue = 1,
+      int maxValue = 90,
+      required Future<void> Function(int value) onSaved,
+    }) async {
+    final controller = TextEditingController(text: initialValue.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(label, style: const TextStyle(color: AppColors.textPrimary)),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            hintText: '$minValue-$maxValue',
+            hintStyle: const TextStyle(color: AppColors.textTertiary),
+          ),
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value == null || value < minValue || value > maxValue) {
+                Navigator.of(context).pop();
+                return;
+              }
+              Navigator.of(context).pop(value);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPastel),
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      await onSaved(result);
+    }
   }
 
   // -------------------------

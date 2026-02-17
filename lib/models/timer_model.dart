@@ -58,10 +58,74 @@ class TimerCategory {
     required this.color,
   });
 
+  factory TimerCategory.fromJson(Map<String, dynamic> json) {
+    return TimerCategory(
+      name: json['name'] as String,
+      icon: json['icon'] as String,
+      color: json['color'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'icon': icon,
+      'color': color,
+    };
+  }
+
   Color toColor() {
     final buffer = StringBuffer();
     if (color.length == 6 || color.length == 7) buffer.write('ff');
     buffer.write(color.replaceFirst('#', ''));
     return Color(int.parse(buffer.toString(), radix: 16));
+  }
+}
+
+/// [TimerState]
+/// 백그라운드 복원을 위한 타이머 상태 정보입니다.
+class TimerState {
+  final String category;
+  final int elapsedSeconds;
+  final int? startMs;
+  final bool isRunning;
+
+  const TimerState({
+    required this.category,
+    required this.elapsedSeconds,
+    required this.startMs,
+    required this.isRunning,
+  });
+
+  factory TimerState.fromJson(Map<String, dynamic> json) {
+    return TimerState(
+      category: json['category'] as String,
+      elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
+      startMs: json['startMs'] as int?,
+      isRunning: json['isRunning'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'category': category,
+      'elapsedSeconds': elapsedSeconds,
+      'startMs': startMs,
+      'isRunning': isRunning,
+    };
+  }
+
+  TimerState copyWith({
+    String? category,
+    int? elapsedSeconds,
+    int? startMs,
+    bool? isRunning,
+  }) {
+    return TimerState(
+      category: category ?? this.category,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      startMs: startMs ?? this.startMs,
+      isRunning: isRunning ?? this.isRunning,
+    );
   }
 }

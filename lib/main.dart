@@ -6,11 +6,14 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
 import 'providers/user_data_provider.dart';
+import 'services/notification_service.dart';
 import 'screens/app_screen.dart';
 import 'screens/main/main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationService.instance.initialize();
 
   try {
     await Firebase.initializeApp(

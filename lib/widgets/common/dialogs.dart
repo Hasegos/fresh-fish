@@ -123,7 +123,8 @@ class CommonDialogs {
       },
     );
 
-    controller.dispose();
+    // dispose를 다음 프레임으로 지연
+    Future.microtask(() => controller.dispose());
     return result;
   }
 

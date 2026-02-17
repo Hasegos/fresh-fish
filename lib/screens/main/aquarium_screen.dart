@@ -4,7 +4,6 @@ import 'dart:math';
 import '../../providers/user_data_provider.dart';
 import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
-import '../../models/quest_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/habit_progress_section.dart';
 
@@ -150,6 +149,13 @@ class _AquariumScreenState extends State<AquariumScreen>
 
   Widget _buildAquariumSection(BuildContext context, UserData userData) {
     final fish = userData.fish;
+    
+    // 오늘 완료된 미션 수 계산
+    final todayQuests = userData.quests
+        .where((quest) => quest.date == userData.currentDate)
+        .toList();
+    final completedCount = todayQuests.where((q) => q.completed).length;
+    final shouldShowFish = completedCount >= 3;
 
     return Container(
       decoration: BoxDecoration(
@@ -174,7 +180,7 @@ class _AquariumScreenState extends State<AquariumScreen>
           // Aquarium with animated fish
           Center(
             child: GestureDetector(
-              onTap: _onFishTapped,
+              onTap: shouldShowFish ? _onFishTapped : null,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -190,32 +196,91 @@ class _AquariumScreenState extends State<AquariumScreen>
                         width: 2,
                       ),
                     ),
-                  ),
-
-                  // Animated fish
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 100),
-                    left: _fishPosition.dx,
-                    top: _fishPosition.dy,
-                    child: GestureDetector(
-                      onTap: _onFishTapped,
-                      child: Text(
-                        fish.type.emoji,
-                        style: const TextStyle(fontSize: 60),
+                    child: SizedBox.expand(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        switchInCurve: Curves.easeOutBack,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          final scale = Tween<double>(begin: 0.9, end: 1.0).animate(animation);
+                          return FadeTransition(
+                            opacity: animation,
+                            child: ScaleTransition(scale: scale, child: child),
+                          );
+                        },
+                        child: shouldShowFish
+                            ? _buildHatchedFish(fish)
+                            : _buildEggPlaceholder(completedCount),
                       ),
                     ),
                   ),
-
-                  // Speech bubble
-                  if (_showMessage)
-                    Positioned(
-                      top: 20,
-                      child: _buildSpeechBubble(_displayedMessage ?? ""),
-                    ),
                 ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEggPlaceholder(int completedCount) {
+    return Center(
+      key: const ValueKey<String>('egg'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '🥚',
+            style: TextStyle(fontSize: 64),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '미션 3개를 완료하면\n알이 부화합니다',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textTertiary.withOpacity(0.7),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$completedCount / 3',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHatchedFish(Fish fish) {
+    return SizedBox.expand(
+      key: const ValueKey<String>('fish'),
+      child: Stack(
+        children: [
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 100),
+            left: _fishPosition.dx,
+            top: _fishPosition.dy,
+            child: GestureDetector(
+              onTap: _onFishTapped,
+              child: Text(
+                fish.type.emoji,
+                style: const TextStyle(fontSize: 60),
+              ),
+            ),
+          ),
+          if (_showMessage)
+            Positioned(
+              top: 20,
+              left: 0,
+              right: 0,
+              child: _buildSpeechBubble(_displayedMessage ?? ''),
+            ),
         ],
       ),
     );
@@ -340,144 +405,5 @@ class _AquariumScreenState extends State<AquariumScreen>
         ),
       ),
     );
-  }
-
-  Widget _buildActiveTodosList(BuildContext context, UserData userData) {
-    // Filter active todos
-    final activeTodos = userData.quests
-        .where((q) =>
-            q.questType == QuestType.daily &&
-            q.date == userData.currentDate &&
-            !q.completed)
-        .toList();
-
-    if (activeTodos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              '🎉',
-              style: TextStyle(fontSize: 48),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'All tasks completed!',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: activeTodos.length,
-      itemBuilder: (context, index) {
-        final todo = activeTodos[index];
-        return _buildTodoCard(todo);
-      },
-    );
-  }
-
-  Widget _buildTodoCard(Quest quest) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.borderLight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _getDifficultyColor(quest.difficulty),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  quest.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getDifficultyLabel(quest.difficulty),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _getDifficultyColor(quest.difficulty),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.accentPastel.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '+10',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.accentPastel,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getDifficultyColor(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return AppColors.statusSuccess;
-      case Difficulty.normal:
-        return AppColors.primaryPastel;
-      case Difficulty.hard:
-        return AppColors.highlightPink;
-    }
-  }
-
-  String _getDifficultyLabel(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return '쉬움';
-      case Difficulty.normal:
-        return '보통';
-      case Difficulty.hard:
-        return '어려움';
-    }
   }
 }

@@ -21,18 +21,21 @@ class QuestsScreen extends StatelessWidget {
   // 💡 화면 전체 구성
   @override
   Widget build(BuildContext context) {
+    // Provider를 먼저 한 번만 가져오기
+    final provider = Provider.of<UserDataProvider>(context, listen: false);
+    
     return Scaffold( // 화면 골격(배경, body)
       backgroundColor: AppColors.background,
       body: SafeArea( // 노치/상단바 영역 피해서 UI 배치
         child: Consumer<UserDataProvider>( // Provider 값이 바뀌면 builder 재실행 -> UI 갱신
-          builder: (context, provider, child) { // builder로 provider를 받아서 데이터 기반 렌더링
-            if (provider.isLoading) { // 로딩 중이라면 리스트 대신 로딩 위젯 표시
+          builder: (context, watchProvider, child) { // builder로 provider를 받아서 데이터 기반 렌더링
+            if (watchProvider.isLoading) { // 로딩 중이라면 리스트 대신 로딩 위젯 표시
               return const LoadingIndicator(message: '로딩 중...');
             }
 
             // userData null 처리
             // 데이터가 아직 없거나 로드 실패 등으로 null이라면 에러 상태 UI
-            final userData = provider.userData;
+            final userData = watchProvider.userData;
             if (userData == null) {
               return const EmptyState(
                 message: '사용자 데이터를 불러올 수 없습니다',
@@ -65,7 +68,7 @@ class QuestsScreen extends StatelessWidget {
                         _buildEmptyText('등록된 퀘스트가 없습니다')
                       else
                         ...quests.map(
-                              (q) => _buildQuestCard(context, q, provider),
+                              (q) => _buildQuestCard(context, q, watchProvider),
                         ),
                       const SizedBox(height: 16),
                       _buildSectionHeader(
@@ -84,7 +87,7 @@ class QuestsScreen extends StatelessWidget {
                               (h) => _buildHabitCard(
                             context,
                             h,
-                            provider,
+                            watchProvider,
                             categories,
                           ),
                         ),
@@ -348,12 +351,16 @@ class QuestsScreen extends StatelessWidget {
       Quest quest,
       UserDataProvider provider,
       ) async {
-    await provider.completeQuestById(quest.id);
-    if (!context.mounted) return;
+    // 다음 프레임에서 실행하여 위젯 트리 충돌 방지
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) return;
+      await provider.completeQuestById(quest.id);
+      if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${quest.title} 완료!')),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${quest.title} 완료!')),
+      );
+    });
   }
 
   /// ✅ 수정: rootNavigator context 저장/재사용 제거 + await 후 mounted 체크
@@ -363,7 +370,6 @@ class QuestsScreen extends StatelessWidget {
       List<String> categories,
       ) async {
     if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
     final title = await CommonDialogs.showInputDialog(
       context,
       title: '퀘스트 추가',
@@ -394,12 +400,17 @@ class QuestsScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (difficulty == null) return;
 
-    await provider.createQuest(
-      title: title.trim(),
-      category: category,
-      difficulty: difficulty,
-      questType: QuestType.sub,
-    );
+    // 다음 프레임에서 실행하여 dialog context와 분리
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        provider.createQuest(
+          title: title.trim(),
+          category: category,
+          difficulty: difficulty,
+          questType: QuestType.sub,
+        );
+      }
+    });
   }
 
   Future<void> _editQuest(
@@ -419,7 +430,12 @@ class QuestsScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (title == null || title.trim().isEmpty) return;
 
-    await provider.updateQuest(quest.copyWith(title: title.trim()));
+    // 다음 프레임에서 실행하여 dialog context와 분리
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        provider.updateQuest(quest.copyWith(title: title.trim()));
+      }
+    });
   }
 
   Future<void> _deleteQuest(
@@ -447,7 +463,6 @@ class QuestsScreen extends StatelessWidget {
         Habit? habit,
       }) async {
     if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
     final result = await CommonDialogs.showBottomSheet<HabitFormResult>(
       context,
       child: HabitFormSheet(
@@ -458,21 +473,26 @@ class QuestsScreen extends StatelessWidget {
 
     if (!context.mounted || result == null) return;
 
-    if (habit == null) {
-      await provider.createHabit(
-        title: result.title,
-        category: result.category,
-        difficulty: result.difficulty,
-      );
-    } else {
-      await provider.updateHabit(
-        habit.copyWith(
+    // 다음 프레임에서 실행하여 dialog context와 분리
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      
+      if (habit == null) {
+        provider.createHabit(
           title: result.title,
           category: result.category,
           difficulty: result.difficulty,
-        ),
-      );
-    }
+        );
+      } else {
+        provider.updateHabit(
+          habit.copyWith(
+            title: result.title,
+            category: result.category,
+            difficulty: result.difficulty,
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _deleteHabit(
