@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart' as m;
 import '../services/storage_service.dart';
+import '../utils/calendar_utils.dart';
+import '../utils/history_utils.dart';
 
 /// ✅ Achievement Seed (마스터 업적 정의)
 class _AchievementSeed {
@@ -324,6 +326,10 @@ class UserDataProvider extends ChangeNotifier {
       return q;
     }).toList();
 
+    final record = HistoryUtils.createTodayRecord(updatedQuests, target.date);
+    final updatedHistory =
+        HistoryUtils.updateOrAddRecord(_userData!.history, record);
+
     // exp/gold 반영
     final updatedFish = _userData!.fish.copyWith(
       exp: _userData!.fish.exp + expGain,
@@ -331,6 +337,7 @@ class UserDataProvider extends ChangeNotifier {
 
     await updateUserData((data) => data.copyWith(
       quests: updatedQuests,
+      history: updatedHistory,
       gold: data.gold + goldGain,
       fish: updatedFish,
     ));
@@ -631,20 +638,21 @@ class UserDataProvider extends ChangeNotifier {
 
     for (final q in completedWithTime) {
       final dt = DateTime.fromMillisecondsSinceEpoch(q.completedAt!);
+      final appDay = CalendarUtils.normalizeToAppDay(dt);
 
-      final day = ymd(dt);
+      final day = ymd(appDay);
       perDay[day] = (perDay[day] ?? 0) + 1;
 
-      final wk = weekKey(dt);
+      final wk = weekKey(appDay);
       perWeek[wk] = (perWeek[wk] ?? 0) + 1;
 
-      final mk = monthKey(dt);
+      final mk = monthKey(appDay);
       perMonth[mk] = (perMonth[mk] ?? 0) + 1;
 
       final h = dt.hour;
       if (h >= 6 && h <= 9) morning++;
       if (h >= 23) night++;
-      if (dt.weekday == DateTime.saturday || dt.weekday == DateTime.sunday) {
+      if (appDay.weekday == DateTime.saturday || appDay.weekday == DateTime.sunday) {
         weekend++;
       }
     }
@@ -669,10 +677,15 @@ class UserDataProvider extends ChangeNotifier {
     // -------------------------
     // 스트릭: 연속 완료 3/7 + 복구자
     // -------------------------
+    if (HistoryUtils.hasPerfectWeek(_userData!.history)) {
+      await unlock('완벽한 한 주 (주간 목표 100% 달성 1회)');
+    }
+
     final days = completedWithTime
         .map((q) {
       final dt = DateTime.fromMillisecondsSinceEpoch(q.completedAt!);
-      return DateTime(dt.year, dt.month, dt.day);
+      final appDay = CalendarUtils.normalizeToAppDay(dt);
+      return DateTime(appDay.year, appDay.month, appDay.day);
     })
         .toSet()
         .toList()

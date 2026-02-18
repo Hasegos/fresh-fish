@@ -1,6 +1,7 @@
 import 'fish_model.dart';
 import 'quest_model.dart';
 import 'timer_model.dart';
+import '../utils/calendar_utils.dart';
 import '../data/timer_categories.dart';
 
 /// [PlacedDecoration]
@@ -225,7 +226,7 @@ class UserData {
   // --- UI 편의를 위한 계산 로직 (Getters) ---
 
   // 오늘 날짜 문자열 (YYYY-MM-DD)
-  String get _todayStr => DateTime.now().toIso8601String().split('T')[0];
+  String get _todayStr => CalendarUtils.today();
 
   // 오늘 완료한 퀘스트 개수
   int get todayCompletedQuests =>

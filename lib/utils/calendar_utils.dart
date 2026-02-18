@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import '../constants/app_constants.dart';
 
 /// 캘린더 관련 유틸리티 함수
 class CalendarUtils {
@@ -17,8 +18,20 @@ class CalendarUtils {
   }
 
   /// 오늘 날짜 문자열
+  /// App-day normalize: 04:00~23:59 => same day, 00:00~03:59 => previous day
+  static DateTime normalizeToAppDay(DateTime date) {
+    final shifted = date.subtract(const Duration(hours: TimeConstants.dayStartHour));
+    return DateTime(shifted.year, shifted.month, shifted.day);
+  }
+
+  /// App-day date string (YYYY-MM-DD)
+  static String appDateString(DateTime date) {
+    return formatDate(normalizeToAppDay(date));
+  }
+
+  /// ?ㅻ뒛 ?좎쭨 臾몄옄??(App-day 기준)
   static String today() {
-    return formatDate(DateTime.now());
+    return appDateString(DateTime.now());
   }
 
   /// 특정 날짜의 요일 (한국어)
@@ -87,13 +100,13 @@ class CalendarUtils {
 
   /// 주간 통계
   static Map<String, dynamic> getWeeklyStats(List<DailyRecord> history) {
-    final now = DateTime.now();
-    final weekAgo = now.subtract(const Duration(days: 7));
+    final today = normalizeToAppDay(DateTime.now());
+    final weekStart = today.subtract(const Duration(days: 6));
 
     final weekRecords = history.where((record) {
       final date = parseDate(record.date);
       if (date == null) return false;
-      return date.isAfter(weekAgo) && date.isBefore(now.add(const Duration(days: 1)));
+      return !date.isBefore(weekStart) && !date.isAfter(today);
     }).toList();
 
     final totalDays = weekRecords.length;

@@ -171,4 +171,29 @@ class HistoryUtils {
 
     return stats;
   }
+
+  /// Perfect week: all 7 days in a calendar week are success (App-day 기준)
+  static bool hasPerfectWeek(List<DailyRecord> history) {
+    if (history.isEmpty) return false;
+
+    final byWeek = <String, Map<String, DailyRecord>>{};
+
+    for (final record in history) {
+      final date = CalendarUtils.parseDate(record.date);
+      if (date == null) continue;
+      final weekStart = date.subtract(Duration(days: date.weekday - 1));
+      final weekKey = CalendarUtils.formatDate(weekStart);
+      final dayKey = CalendarUtils.formatDate(date);
+      final bucket = byWeek.putIfAbsent(weekKey, () => <String, DailyRecord>{});
+      bucket[dayKey] = record;
+    }
+
+    for (final bucket in byWeek.values) {
+      if (bucket.length != 7) continue;
+      final allSuccess = bucket.values.every((r) => r.status == RecordStatus.success);
+      if (allSuccess) return true;
+    }
+
+    return false;
+  }
 }

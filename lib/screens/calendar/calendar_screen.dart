@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import '../../providers/app_provider.dart';
+import '../../providers/user_data_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../utils/calendar_utils.dart';
+import '../../models/models.dart';
 
 /// 캘린더 화면 (활동 기록)
 class CalendarScreen extends StatefulWidget {
@@ -20,7 +24,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = CalendarUtils.normalizeToAppDay(DateTime.now());
     _focusedMonth = DateTime(now.year, now.month);
     _selectedDate = DateTime(now.year, now.month, now.day);
   }
@@ -57,6 +61,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const Text('Calendar', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 8),
                   Text('${history.length}일 기록됨', style: const TextStyle(fontSize: 16, color: AppColors.textSecondary)),
+                  const SizedBox(height: 16),
+                  if (kDebugMode) _buildDevPerfectWeekButton(context),
                   const SizedBox(height: 24),
 
                   _buildCalendar(historyDates, timerTotals),
@@ -98,7 +104,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildStatsCard(List history) {
     final totalDays = history.length;
-    final successDays = history.where((r) => r.status.name == 'success').length;
+    final successDays =
+        history.where((r) => r.status == RecordStatus.success).length;
 
     final totalQuests = history.fold<int>(0, (sum, r) => sum + (r.totalQuests as int));
     final completedQuests = history.fold<int>(0, (sum, r) => sum + (r.completedQuests as int));
@@ -112,6 +119,116 @@ class _CalendarScreenState extends State<CalendarScreen> {
           _buildStatItem(icon: Icons.calendar_today, label: '총 일수', value: '$totalDays일', color: AppColors.primary),
           _buildStatItem(icon: Icons.check_circle, label: '성공', value: '$successDays일', color: AppColors.success),
           _buildStatItem(icon: Icons.assignment, label: '완료', value: '$completedQuests/$totalQuests', color: AppColors.warning),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevPerfectWeekButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: () async {
+          final userProvider = context.read<UserDataProvider>();
+          final appProvider = context.read<AppProvider>();
+          final data = userProvider.userData ?? appProvider.userData;
+          if (data == null) return;
+
+          final today = CalendarUtils.normalizeToAppDay(DateTime.now());
+          final weekStart = today.subtract(Duration(days: today.weekday - 1));
+
+          final dummy = List.generate(7, (i) {
+            final date = weekStart.add(Duration(days: i));
+            return DailyRecord(
+              date: CalendarUtils.formatDate(date),
+              totalQuests: 3,
+              completedQuests: 3,
+              status: RecordStatus.success,
+            );
+          });
+
+          List<DailyRecord> mergeByDate(
+            List<DailyRecord> existing,
+            List<DailyRecord> incoming,
+          ) {
+            final map = <String, DailyRecord>{
+              for (final r in existing) r.date: r,
+            };
+            for (final r in incoming) {
+              map[r.date] = r;
+            }
+            return map.values.toList();
+          }
+
+          await userProvider.updateUserData(
+            (u) => u.copyWith(history: mergeByDate(u.history, dummy)),
+          );
+          await appProvider.updateUserData(
+            (u) => u.copyWith(history: mergeByDate(u.history, dummy)),
+          );
+
+          final unlocked = await userProvider.checkAndUnlockAchievements();
+          if (!context.mounted) return;
+          final perfect = unlocked
+              .where((a) => a.title == '완벽한 한 주 (주간 목표 100% 달성 1회)')
+              .toList();
+          if (perfect.isNotEmpty) {
+            await _showAchievementPopup(
+              context,
+              icon: perfect.first.icon,
+              title: perfect.first.title,
+            );
+          }
+        },
+        child: const Text('완벽한 한 주 개발자용'),
+      ),
+    );
+  }
+
+  Future<void> _showAchievementPopup(
+    BuildContext context, {
+    required String icon,
+    required String title,
+  }) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('업적 달성'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(icon, style: const TextStyle(fontSize: 30)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '축하합니다! 업적을 달성했어요.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
         ],
       ),
     );
@@ -187,7 +304,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
               final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNumber);
               final isSelected = _isSameDay(_selectedDate, date);
-              final isToday = _isSameDay(DateTime.now(), date);
+              final isToday = _isSameDay(CalendarUtils.normalizeToAppDay(DateTime.now()), date);
               final hasHistory = historyDates.contains(date);
               final totalSeconds = monthTotals[date] ?? 0;
                 final intensity = _calculateIntensity(totalSeconds, maxSeconds);
@@ -274,7 +391,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       try {
         final startMillis = session.startTime as int;
         final date = DateTime.fromMillisecondsSinceEpoch(startMillis);
-        final dayKey = DateTime(date.year, date.month, date.day);
+        final appDay = CalendarUtils.normalizeToAppDay(date);
+        final dayKey = DateTime(appDay.year, appDay.month, appDay.day);
         totals[dayKey] = (totals[dayKey] ?? 0) + (session.durationSeconds as int);
       } catch (_) {
         // ignore invalid session
@@ -289,7 +407,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       try {
         final startMillis = session.startTime as int;
         final date = DateTime.fromMillisecondsSinceEpoch(startMillis);
-        if (date.year == month.year && date.month == month.month) {
+        final appDay = CalendarUtils.normalizeToAppDay(date);
+        if (appDay.year == month.year && appDay.month == month.month) {
           final category = session.category as String;
           totals[category] = (totals[category] ?? 0) + (session.durationSeconds as int);
         }
@@ -435,7 +554,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   // [Critical Fix] dynamic 레코드에서 String과 int 값을 안전하게 추출합니다.
   Widget _buildHistoryCard(dynamic record) {
-    final String statusName = record.status.name as String;
+    final RecordStatus status = record.status as RecordStatus;
     final String date = record.date as String;
     final int completed = record.completedQuests as int;
     final int total = record.totalQuests as int;
@@ -443,8 +562,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     // [Why] 완료율 계산 수식: $$ \text{rate} = \frac{\text{completed}}{\text{total}} \times 100 $$
     final int rate = total > 0 ? ((completed / total) * 100).round() : 0;
 
-    final statusColor = _getStatusColor(statusName);
-    final statusIcon = _getStatusIcon(statusName);
+    final statusColor = _getStatusColor(status);
+    final statusIcon = _getStatusIcon(status);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -473,21 +592,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(RecordStatus status) {
     switch (status) {
-      case 'success': return Colors.green;
-      case 'partial': return Colors.orange;
-      case 'fail': return Colors.red;
-      default: return Colors.grey;
+      case RecordStatus.success:
+        return Colors.green;
+      case RecordStatus.partial:
+        return Colors.orange;
+      case RecordStatus.fail:
+        return Colors.red;
+      case RecordStatus.none:
+        return Colors.grey;
     }
   }
 
-  IconData _getStatusIcon(String status) {
+  IconData _getStatusIcon(RecordStatus status) {
     switch (status) {
-      case 'success': return Icons.check_circle;
-      case 'partial': return Icons.adjust;
-      case 'fail': return Icons.cancel;
-      default: return Icons.help;
+      case RecordStatus.success:
+        return Icons.check_circle;
+      case RecordStatus.partial:
+        return Icons.adjust;
+      case RecordStatus.fail:
+        return Icons.cancel;
+      case RecordStatus.none:
+        return Icons.help;
     }
   }
 }

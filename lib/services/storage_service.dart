@@ -7,6 +7,8 @@ import '../models/quest_model.dart';
 import '../models/timer_model.dart';
 import '../data/timer_categories.dart';
 import '../utils/quest_utils.dart';
+import '../utils/calendar_utils.dart';
+import '../utils/history_utils.dart';
 import 'firebase_service.dart';
 
 /// 로컬 저장소 서비스
@@ -87,7 +89,7 @@ class StorageService {
     List<String> selectedCategories,
   ) {
     final now = DateTime.now();
-    final dateString = _formatDate(now);
+    final dateString = CalendarUtils.appDateString(now);
 
     return UserData(
       id: _uuid.v4(),
@@ -194,7 +196,7 @@ class StorageService {
   }
 
   UserData _ensureDailyData(UserData data) {
-    final todayStr = _formatDate(DateTime.now());
+    final todayStr = CalendarUtils.today();
 
     final isNewUser = data.quests.isEmpty &&
         data.habits.isEmpty &&
@@ -210,10 +212,14 @@ class StorageService {
         todayStr,
       );
 
+      final record = HistoryUtils.createTodayRecord(data.quests, data.currentDate);
+      final updatedHistory = HistoryUtils.updateOrAddRecord(data.history, record);
+
       return data.copyWith(
         currentDate: todayStr,
         quests: [...nonDaily, ...dailyQuests],
         habits: _resetHabitsForNewDay(data.habits),
+        history: updatedHistory,
       );
     }
 
@@ -231,7 +237,7 @@ class StorageService {
   }
 
   List<Habit> _resetHabitsForNewDay(List<Habit> habits) {
-    final today = DateTime.now();
+    final today = CalendarUtils.normalizeToAppDay(DateTime.now());
     return habits.map((habit) {
       if (habit.lastCompletedAt == null) {
         return habit.copyWith(completionCount: 0);
@@ -239,9 +245,10 @@ class StorageService {
 
       final lastCompleted =
           DateTime.fromMillisecondsSinceEpoch(habit.lastCompletedAt!);
-      final isSameDay = lastCompleted.year == today.year &&
-          lastCompleted.month == today.month &&
-          lastCompleted.day == today.day;
+      final lastCompletedDay = CalendarUtils.normalizeToAppDay(lastCompleted);
+      final isSameDay = lastCompletedDay.year == today.year &&
+          lastCompletedDay.month == today.month &&
+          lastCompletedDay.day == today.day;
 
       if (isSameDay) {
         return habit;

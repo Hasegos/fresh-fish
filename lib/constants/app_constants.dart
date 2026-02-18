@@ -14,6 +14,9 @@ class TimeConstants {
 
   /// 1일 (밀리초)
   static const int oneDay = 24 * 60 * 60 * 1000;
+
+  /// App day start hour (e.g. 04:00 means 00:00-03:59 counts as previous day)
+  static const int dayStartHour = 4;
 }
 
 /// 경험치 및 레벨 상수

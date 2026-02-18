@@ -7,6 +7,7 @@ import '../data/timer_categories.dart';
 import '../models/fish_model.dart';
 import '../models/user_data_model.dart';
 import '../utils/quest_utils.dart';
+import '../utils/calendar_utils.dart';
 import 'onboarding/onboarding_screen.dart';
 import 'onboarding/category_selection_screen.dart';
 import 'onboarding/egg_selection_screen.dart';
@@ -101,7 +102,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       );
 
       // UserData 객체 생성
-      final todayStr = DateTime.now().toIso8601String().split('T')[0];
+      final todayStr = CalendarUtils.today();
       final userData = UserData(
         id: userId,
         fish: fish,
