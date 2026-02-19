@@ -15,38 +15,37 @@ class MenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 24),
+          color: AppColors.textPrimary,
+          tooltip: '뒤로가기',
+          onPressed: () {
+            if (onGoHome != null) {
+              onGoHome!();
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        title: const Text(
+          'Menu',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, size: 28),
-                    color: AppColors.primary,
-                    tooltip: '홈으로 돌아가기',
-                    onPressed: () {
-                      if (onGoHome != null) {
-                        onGoHome!();
-                      } else {
-                        Navigator.pop(context);
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '메뉴',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               
               _buildMenuCard(
                 context,

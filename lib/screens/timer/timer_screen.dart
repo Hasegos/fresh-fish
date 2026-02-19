@@ -468,7 +468,6 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
       ? (_pomodoroPhaseDurationSeconds(settings) - (_isRunning ? _pomodoroPhaseSeconds : 0))
         .clamp(0, _pomodoroPhaseDurationSeconds(settings))
       : todayTotalSeconds + currentRunningSeconds;
-    final statusText = hasCategory ? '오늘 누적 시간 · $_selectedCategory' : '오늘 누적 시간';
 
     return Container(
       width: double.infinity,
@@ -508,15 +507,7 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
                 color: Colors.white.withOpacity(0.9),
               ),
             ),
-          const SizedBox(height: 8),
-          Text(
-            statusText,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.95),
-            ),
-          ),
+          if (hasCategory) const SizedBox(height: 8),
         ],
       ),
     );

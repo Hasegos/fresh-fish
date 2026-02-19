@@ -127,13 +127,13 @@ class _AquariumScreenState extends State<AquariumScreen>
             children: [
               Column(
                 children: [
-                  // Top 45% - Aquarium Section
+                  // Top 55% - Aquarium Section
                   SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.45,
+                    height: MediaQuery.of(context).size.height * 0.55,
                     child: _buildAquariumSection(context, userData),
                   ),
 
-                  // Bottom 55% - Task List Section
+                  // Bottom 45% - Task List Section
                   Expanded(
                     child: _buildMissionArea(context, userData),
                   ),
@@ -186,8 +186,8 @@ class _AquariumScreenState extends State<AquariumScreen>
                 children: [
                   // Aquarium background
                   Container(
-                    width: 280,
-                    height: 200,
+                    width: 340,
+                    height: 260,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(20),
