@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../providers/user_data_provider.dart';
 import '../../models/timer_model.dart';
 import '../../models/user_data_model.dart';
 import '../../data/timer_categories.dart';
@@ -23,9 +24,8 @@ enum PomodoroPhase {
   longBreak,
 }
 
-class _TimerScreenState extends State<TimerScreen> {
+class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
   Timer? _timer;
-  int _seconds = 0;
   bool _isRunning = false;
   String? _selectedCategory;
   PomodoroPhase _pomodoroPhase = PomodoroPhase.focus;
@@ -33,35 +33,81 @@ class _TimerScreenState extends State<TimerScreen> {
   int _completedFocusSessions = 0;
   int? _pomodoroPhaseStartMs;
   bool _showTodayTotals = true;
+  bool? _lastPomodoroEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    final provider = context.read<AppProvider>();
+    _selectedCategory = provider.activeTimerCategory;
+    _isRunning = provider.isTimerRunning;
+
+    if (_isRunning) {
+      _startUiTicker();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final pomodoro = context.watch<AppProvider>().pomodoroSettings;
+    final wasEnabled = _lastPomodoroEnabled;
+    _lastPomodoroEnabled = pomodoro.enabled;
+
+    if (wasEnabled == null || wasEnabled == pomodoro.enabled) {
+      return;
+    }
+
+    if (pomodoro.enabled) {
+      _pomodoroPhase = PomodoroPhase.focus;
+      _pomodoroPhaseSeconds = 0;
+      _pomodoroPhaseStartMs = DateTime.now().millisecondsSinceEpoch;
+      if (_isRunning) {
+        _schedulePomodoroNotification(pomodoro);
+        _startUiTicker();
+      }
+    } else {
+      NotificationService.instance.cancelPomodoroNotifications();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+
+    if (state == AppLifecycleState.resumed) {
+      if (_isRunning) {
+        _startUiTicker();
+      } else {
+        setState(() {});
+      }
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _timer?.cancel();
+    }
+  }
 
   @override
   void dispose() {
     // [Why] 화면을 벗어날 때 타이머를 멈추지 않으면 메모리 누수(Memory Leak)가 발생합니다.
     _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  /// 타이머 시작/재개 로직
-  void _startTimer(String category) {
+  void _startUiTicker() {
+    _timer?.cancel();
     final pomodoro = context.read<AppProvider>().pomodoroSettings;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
-    setState(() {
-      _selectedCategory = category;
-      _isRunning = true;
-      _seconds = 0;
-      _pomodoroPhase = PomodoroPhase.focus;
-      _pomodoroPhaseSeconds = 0;
-      _completedFocusSessions = 0;
-      _pomodoroPhaseStartMs = nowMs;
-    });
 
-    if (pomodoro.enabled) {
-      NotificationService.instance.cancelPomodoroNotifications();
-      _schedulePomodoroNotification(pomodoro);
-    }
-
-    _timer?.cancel(); // 기존 타이머가 있다면 중복 방지를 위해 취소
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted || !_isRunning) return;
+
       final shouldAdvancePhase = pomodoro.enabled && () {
         final currentMs = DateTime.now().millisecondsSinceEpoch;
         final startMs = _pomodoroPhaseStartMs ?? currentMs;
@@ -74,76 +120,121 @@ class _TimerScreenState extends State<TimerScreen> {
         await _advancePomodoroPhase(pomodoro);
       }
 
+      if (!mounted) return;
       setState(() {
         if (pomodoro.enabled) {
           final currentMs = DateTime.now().millisecondsSinceEpoch;
           final startMs = _pomodoroPhaseStartMs ?? currentMs;
           _pomodoroPhaseSeconds = ((currentMs - startMs) / 1000).floor();
-        } else {
-          _seconds++;
         }
       });
     });
   }
 
+  /// 타이머 시작/재개 로직
+  Future<void> _startTimer(String category) async {
+    final provider = context.read<AppProvider>();
+    final pomodoro = provider.pomodoroSettings;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+
+    await provider.startTimer(category);
+
+    setState(() {
+      _selectedCategory = category;
+      _isRunning = true;
+      _pomodoroPhase = PomodoroPhase.focus;
+      _pomodoroPhaseSeconds = 0;
+      _completedFocusSessions = 0;
+      _pomodoroPhaseStartMs = nowMs;
+    });
+
+    if (pomodoro.enabled) {
+      NotificationService.instance.cancelPomodoroNotifications();
+      _schedulePomodoroNotification(pomodoro);
+    }
+
+    _startUiTicker();
+  }
+
   /// 타이머 일시정지
-  void _pauseTimer() {
+  Future<void> _pauseTimer() async {
+    await context.read<AppProvider>().pauseTimer();
+    if (!mounted) return;
     _timer?.cancel();
     NotificationService.instance.cancelPomodoroNotifications();
     setState(() {
       _isRunning = false;
     });
+  }
+
+  Future<void> _resumeTimer() async {
+    final category = _selectedCategory;
+    if (category == null) return;
+
+    await context.read<AppProvider>().resumeTimer();
+    if (!mounted) return;
+    setState(() {
+      _isRunning = true;
+      if (_pomodoroPhaseStartMs == null) {
+        _pomodoroPhaseStartMs = DateTime.now().millisecondsSinceEpoch;
+      }
+    });
+
+    final pomodoro = context.read<AppProvider>().pomodoroSettings;
+    if (pomodoro.enabled) {
+      _schedulePomodoroNotification(pomodoro);
+    }
+    _startUiTicker();
   }
 
   /// 타이머 종료 및 보상 지급
   Future<void> _stopTimer() async {
     _timer?.cancel();
     NotificationService.instance.cancelPomodoroNotifications();
-    final pomodoro = context.read<AppProvider>().pomodoroSettings;
+    final appProvider = context.read<AppProvider>();
+    final pomodoro = appProvider.pomodoroSettings;
+    final elapsedFromProvider = await appProvider.stopTimer();
+    if (!mounted) return;
 
     // [How] 1분(60초) 이상 집중했을 때만 데이터로 기록하고 보상을 줍니다.
     final focusSeconds = pomodoro.enabled && _pomodoroPhase == PomodoroPhase.focus
         ? _pomodoroPhaseSeconds
-        : _seconds;
+        : elapsedFromProvider;
     
     debugPrint('⏹️ Timer Stop - focusSeconds: $focusSeconds, category: $_selectedCategory');
     
-    if (focusSeconds >= 60 && _selectedCategory != null) {
-      final provider = context.read<AppProvider>();
+    if (focusSeconds > 0 && _selectedCategory != null) {
       debugPrint('💾 Saving timer session: $_selectedCategory for $focusSeconds seconds');
       
-      await provider.completeTimerSession(
+      await appProvider.completeTimerSession(
         category: _selectedCategory!,
         durationSeconds: focusSeconds,
       );
+      if (!mounted) return;
+
+      // 메인 대시보드(UserDataProvider)가 즉시 반영되도록 동기화
+      await context.read<UserDataProvider>().refreshUserData();
+      if (!mounted) return;
       
       debugPrint('✅ Timer session saved successfully');
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🎉 ${(focusSeconds / 60).floor()}분 집중 완료! 물고기가 기뻐합니다.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else if (focusSeconds > 0) {
       final elapsed = _formatTime(focusSeconds);
-      debugPrint('⏱️ Short session - $elapsed');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('⏱️ 이번 집중 시간: $elapsed'),
-          backgroundColor: AppColors.primaryPastel,
+          backgroundColor: Colors.green,
         ),
       );
     }
 
     setState(() {
       _isRunning = false;
-      _seconds = 0;
       _selectedCategory = null;
       _pomodoroPhaseSeconds = 0;
       _pomodoroPhase = PomodoroPhase.focus;
       _completedFocusSessions = 0;
+      _pomodoroPhaseStartMs = null;
     });
   }
 
@@ -156,10 +247,6 @@ class _TimerScreenState extends State<TimerScreen> {
     return '${hours.toString().padLeft(2, '0')}:'
         '${minutes.toString().padLeft(2, '0')}:'
         '${secs.toString().padLeft(2, '0')}';
-  }
-
-  int _displaySeconds(PomodoroSettings settings) {
-    return settings.enabled ? _pomodoroPhaseSeconds : _seconds;
   }
 
   int _pomodoroPhaseDurationSeconds(PomodoroSettings settings) {
@@ -179,6 +266,9 @@ class _TimerScreenState extends State<TimerScreen> {
         category: _selectedCategory!,
         durationSeconds: settings.focusMinutes * 60,
       );
+      if (!mounted) return;
+      await context.read<UserDataProvider>().refreshUserData();
+      if (!mounted) return;
       _completedFocusSessions++;
     }
 
@@ -236,17 +326,40 @@ class _TimerScreenState extends State<TimerScreen> {
     String category, {
     required bool onlyToday,
   }) {
-    final today = DateTime.now();
+    final now = DateTime.now();
     var total = 0;
     for (final session in sessions) {
       if (session.category != category) continue;
+
+      final date = DateTime.fromMillisecondsSinceEpoch(session.startTime);
+
       if (onlyToday) {
-        final date = DateTime.fromMillisecondsSinceEpoch(session.startTime);
-        final isSameDay = date.year == today.year && date.month == today.month && date.day == today.day;
+        final isSameDay =
+            date.year == now.year && date.month == now.month && date.day == now.day;
         if (!isSameDay) continue;
+      } else {
+        final startOfToday = DateTime(now.year, now.month, now.day);
+        final startOfRange = startOfToday.subtract(const Duration(days: 6));
+        if (date.isBefore(startOfRange)) continue;
       }
+
       total += session.durationSeconds;
     }
+    return total;
+  }
+
+  int _todayTotalSeconds(List<TimerSession> sessions) {
+    final today = DateTime.now();
+    var total = 0;
+
+    for (final session in sessions) {
+      final date = DateTime.fromMillisecondsSinceEpoch(session.startTime);
+      final isSameDay =
+          date.year == today.year && date.month == today.month && date.day == today.day;
+      if (!isSameDay) continue;
+      total += session.durationSeconds;
+    }
+
     return total;
   }
 
@@ -266,6 +379,7 @@ class _TimerScreenState extends State<TimerScreen> {
     final provider = context.watch<AppProvider>();
     final userData = provider.userData;
     final pomodoro = provider.pomodoroSettings;
+    final todayTotalSeconds = _todayTotalSeconds(userData?.timerSessions ?? []);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -274,7 +388,7 @@ class _TimerScreenState extends State<TimerScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              _buildHeroSection(pomodoro),
+              _buildHeroSection(pomodoro, provider, todayTotalSeconds),
               const SizedBox(height: 24),
 
               // 컨트롤 버튼 (카테고리 선택 시에만 노출)
@@ -300,7 +414,7 @@ class _TimerScreenState extends State<TimerScreen> {
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('전체'),
+                    label: const Text('주간'),
                     selected: !_showTodayTotals,
                     onSelected: (value) {
                       setState(() {
@@ -341,14 +455,20 @@ class _TimerScreenState extends State<TimerScreen> {
       ),
     );
   }
-  Widget _buildHeroSection(PomodoroSettings settings) {
+  Widget _buildHeroSection(
+    PomodoroSettings settings,
+    AppProvider provider,
+    int todayTotalSeconds,
+  ) {
     final hasCategory = _selectedCategory != null;
-    final displaySeconds = _displaySeconds(settings);
-    final statusText = !hasCategory
-        ? '카테고리를 선택하세요'
-        : _isRunning
-            ? '집중 중: $_selectedCategory · ${_formatTime(displaySeconds)}'
-            : '준비 완료: $_selectedCategory';
+    final currentRunningSeconds = provider.isTimerRunning
+      ? provider.activeTimerElapsedSecondsToday
+      : 0;
+    final displaySeconds = settings.enabled
+      ? (_pomodoroPhaseDurationSeconds(settings) - (_isRunning ? _pomodoroPhaseSeconds : 0))
+        .clamp(0, _pomodoroPhaseDurationSeconds(settings))
+      : todayTotalSeconds + currentRunningSeconds;
+    final statusText = hasCategory ? '오늘 누적 시간 · $_selectedCategory' : '오늘 누적 시간';
 
     return Container(
       width: double.infinity,
@@ -379,7 +499,7 @@ class _TimerScreenState extends State<TimerScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          if (settings.enabled && hasCategory)
+          if (settings.enabled && hasCategory && _isRunning)
             Text(
               '${_pomodoroPhaseLabel(_pomodoroPhase)} · Session ${_completedFocusSessions + 1}/${settings.sessionsPerCycle}',
               style: TextStyle(
@@ -403,15 +523,21 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   Widget _buildControlPanel() {
+    final appProvider = context.watch<AppProvider>();
+    final elapsed = appProvider.activeTimerElapsedSeconds;
+    final canResume = !_isRunning && (_selectedCategory != null) && elapsed > 0;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (!_isRunning)
           _buildControlButton(
-            icon: Icons.play_arrow,
-            label: '시작',
+            icon: canResume ? Icons.play_circle : Icons.play_arrow,
+            label: canResume ? '재개' : '시작',
             color: Colors.green,
-            onPressed: () => _startTimer(_selectedCategory!),
+            onPressed: canResume
+                ? _resumeTimer
+                : () => _startTimer(_selectedCategory!),
           ),
         if (_isRunning)
           _buildControlButton(

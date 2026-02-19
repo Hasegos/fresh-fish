@@ -88,12 +88,14 @@ class TimerState {
   final String category;
   final int elapsedSeconds;
   final int? startMs;
+  final int? startedAtMs;
   final bool isRunning;
 
   const TimerState({
     required this.category,
     required this.elapsedSeconds,
     required this.startMs,
+    required this.startedAtMs,
     required this.isRunning,
   });
 
@@ -102,6 +104,7 @@ class TimerState {
       category: json['category'] as String,
       elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
       startMs: json['startMs'] as int?,
+      startedAtMs: json['startedAtMs'] as int?,
       isRunning: json['isRunning'] as bool? ?? false,
     );
   }
@@ -111,6 +114,7 @@ class TimerState {
       'category': category,
       'elapsedSeconds': elapsedSeconds,
       'startMs': startMs,
+      'startedAtMs': startedAtMs,
       'isRunning': isRunning,
     };
   }
@@ -119,12 +123,14 @@ class TimerState {
     String? category,
     int? elapsedSeconds,
     int? startMs,
+    int? startedAtMs,
     bool? isRunning,
   }) {
     return TimerState(
       category: category ?? this.category,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       startMs: startMs ?? this.startMs,
+      startedAtMs: startedAtMs ?? this.startedAtMs,
       isRunning: isRunning ?? this.isRunning,
     );
   }

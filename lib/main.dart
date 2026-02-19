@@ -13,17 +13,24 @@ import 'screens/main/main_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await NotificationService.instance.initialize();
+  runApp(const FishQuestApp());
+
+  _bootstrapServices();
+}
+
+Future<void> _bootstrapServices() async {
+  try {
+    await NotificationService.instance
+        .initialize()
+        .timeout(const Duration(seconds: 3));
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('⚠️ NotificationService 초기화 실패/타임아웃: $e');
+    }
+  }
 
   try {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSy...",
-        appId: "1:12345:android:...",
-        messagingSenderId: "12345...",
-        projectId: "your-project-id",
-      ),
-    );
+    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
     if (kDebugMode) {
       debugPrint('✅ Firebase 초기화 성공');
     }
@@ -49,8 +56,6 @@ Future<void> main() async {
       debugPrint('⚠️ Firebase 초기화 실패(기타): $e');
     }
   }
-
-  runApp(const FishQuestApp());
 }
 
 class FishQuestApp extends StatelessWidget {

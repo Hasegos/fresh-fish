@@ -54,6 +54,71 @@ class FirebaseService {
     }
   }
 
+  /// 타이머 누적 시간 저장 (트랜잭션)
+  ///
+  /// Why:
+  /// - 여러 디바이스/세션에서 동시에 종료가 발생해도 누적치가 꼬이지 않도록
+  ///   Firestore 트랜잭션으로 원자적(atomic) 업데이트를 수행합니다.
+  ///
+  /// How:
+  /// - users/{uid} 문서를 읽은 뒤 기존 누적값을 가져와
+  ///   totalFocusSeconds, totalFocusSessions, 카테고리별 누적 seconds를 증가시킵니다.
+  Future<void> accumulateFocusDuration({
+    required String category,
+    required int durationSeconds,
+  }) async {
+    if (durationSeconds <= 0) return;
+    if (Firebase.apps.isEmpty) return;
+
+    if (currentUserId == null) {
+      await signInAnonymously();
+    }
+
+    final uid = currentUserId;
+    if (uid == null) return;
+
+    final userDoc = _firestore.collection('users').doc(uid);
+    final safeCategoryKey = category
+        .replaceAll('.', '_')
+        .replaceAll('/', '_')
+        .replaceAll('[', '_')
+        .replaceAll(']', '_');
+
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDoc);
+        final data = snapshot.data() ?? <String, dynamic>{};
+
+        final stats = (data['stats'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+        final categorySeconds =
+            (stats['categorySeconds'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+
+        final currentTotalSeconds = (stats['totalFocusSeconds'] as num?)?.toInt() ?? 0;
+        final currentTotalSessions = (stats['totalFocusSessions'] as num?)?.toInt() ?? 0;
+        final currentCategorySeconds =
+            (categorySeconds[safeCategoryKey] as num?)?.toInt() ?? 0;
+
+        categorySeconds[safeCategoryKey] = currentCategorySeconds + durationSeconds;
+
+        final nextStats = <String, dynamic>{
+          ...stats,
+          'totalFocusSeconds': currentTotalSeconds + durationSeconds,
+          'totalFocusSessions': currentTotalSessions + 1,
+          'lastFocusCategory': category,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'categorySeconds': categorySeconds,
+        };
+
+        transaction.set(userDoc, {
+          'stats': nextStats,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      });
+    } catch (e) {
+      print('Firebase 타이머 누적 저장 실패: $e');
+    }
+  }
+
   /// 사용자 데이터 불러오기
   Future<UserData?> getUserData() async {
     if (Firebase.apps.isEmpty) return null;

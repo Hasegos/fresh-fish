@@ -28,7 +28,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }),
       const QuestsScreen(),
       const TimerScreen(),
-      const MenuScreen(),
+      MenuScreen(
+        onGoHome: () {
+          if (mounted) {
+            setState(() => _currentIndex = 0);
+          }
+        },
+      ),
     ];
   }
 

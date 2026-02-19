@@ -64,8 +64,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
             return Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: ListView(
                 children: [
                   const Text('Calendar', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 8),
@@ -98,23 +97,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   _buildStatsCard(history),
                   const SizedBox(height: 16),
 
+                  _buildWeeklyProgressGraph(userData.timerSessions),
+                  const SizedBox(height: 16),
+
                   const Text('최근 기록', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 12),
 
-                  Expanded(
-                    child: history.isEmpty
-                        ? const Center(child: Text('아직 기록이 없습니다', style: TextStyle(color: AppColors.textTertiary)))
-                        : ListView.builder(
-                            itemCount: history.length,
-                            itemBuilder: (context, index) {
-                              final record = history[history.length - 1 - index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12.0),
-                                child: _buildHistoryCard(record),
-                              );
-                            },
-                          ),
-                  ),
+                  if (history.isEmpty)
+                    const Center(
+                      child: Text(
+                        '아직 기록이 없습니다',
+                        style: TextStyle(color: AppColors.textTertiary),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: history.length,
+                      itemBuilder: (context, index) {
+                        final record = history[history.length - 1 - index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildHistoryCard(record),
+                        );
+                      },
+                    ),
                 ],
               ),
             );
@@ -728,5 +736,100 @@ class _CalendarScreenState extends State<CalendarScreen> {
       Color(0xFF90A4AE),
     ];
     return colors[hash % colors.length];
+  }
+
+  Widget _buildWeeklyProgressGraph(List<TimerSession> sessions) {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+
+    final days = List.generate(7, (index) => start.add(Duration(days: index)));
+    final dayTotals = <int>[];
+
+    for (final day in days) {
+      var total = 0;
+      for (final session in sessions) {
+        final date = DateTime.fromMillisecondsSinceEpoch(session.startTime);
+        final isSameDay =
+            date.year == day.year && date.month == day.month && date.day == day.day;
+        if (!isSameDay) continue;
+        total += session.durationSeconds;
+      }
+      dayTotals.add(total);
+    }
+
+    final maxSeconds = dayTotals.reduce((a, b) => a > b ? a : b);
+    final labels = ['월', '화', '수', '목', '금', '토', '일'];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppDecorations.card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '최근 7일 집중 통계',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...List.generate(7, (index) {
+            final day = days[index];
+            final total = dayTotals[index];
+            final ratio = maxSeconds == 0 ? 0.0 : (total / maxSeconds);
+            final minutes = total ~/ 60;
+            final weekdayLabel = labels[(day.weekday + 6) % 7];
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      weekdayLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        minHeight: 8,
+                        backgroundColor: AppColors.borderLight,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 52,
+                    child: Text(
+                      '${minutes}m',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 }

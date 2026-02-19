@@ -3,9 +3,11 @@ import 'package:uuid/uuid.dart';
 import '../models/user_data_model.dart';
 import '../models/timer_model.dart';
 import '../services/storage_service.dart';
+import '../services/firebase_service.dart';
 
 class AppProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();
+  final FirebaseService _firebaseService = FirebaseService();
   UserData? _userData;
   bool _isLoading = true;
   TimerState? _timerState;
@@ -60,6 +62,26 @@ class AppProvider extends ChangeNotifier {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final delta = ((nowMs - startMs) / 1000).floor();
     return state.elapsedSeconds + delta;
+  }
+
+  int get activeTimerElapsedSecondsToday {
+    final state = _timerState;
+    if (state == null || !state.isRunning) return 0;
+
+    final totalElapsed = activeTimerElapsedSeconds;
+    final startedAtMs = state.startedAtMs ?? state.startMs;
+    if (startedAtMs == null) return totalElapsed;
+
+    final now = DateTime.now();
+    final startOfTodayMs = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+
+    if (startedAtMs >= startOfTodayMs) {
+      return totalElapsed;
+    }
+
+    final secondsBeforeToday = ((startOfTodayMs - startedAtMs) / 1000).floor();
+    final todayElapsed = totalElapsed - secondsBeforeToday;
+    return todayElapsed > 0 ? todayElapsed : 0;
   }
 
   /// 초기화 및 데이터 로드
@@ -163,6 +185,13 @@ class AppProvider extends ChangeNotifier {
         return data.copyWith(timerSessions: [...data.timerSessions, session]);
       }
     );
+
+    // Firestore 누적 집계는 트랜잭션으로 별도 반영
+    // (실패해도 로컬 데이터는 이미 저장되어 UX가 끊기지 않도록 분리)
+    await _firebaseService.accumulateFocusDuration(
+      category: category,
+      durationSeconds: durationSeconds,
+    );
     
     debugPrint('✅ completeTimerSession finished. Total sessions: ${_userData?.timerSessions.length}');
   }
@@ -173,6 +202,7 @@ class AppProvider extends ChangeNotifier {
       category: category,
       elapsedSeconds: 0,
       startMs: nowMs,
+      startedAtMs: nowMs,
       isRunning: true,
     );
     notifyListeners();
