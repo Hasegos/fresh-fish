@@ -6,6 +6,13 @@ import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/habit_progress_section.dart';
+import '../../widgets/pixel_fish.dart';
+
+enum FishRenderStyle {
+  pixelArt,   // B) 픽셀 아트
+  smooth,     // C) 부드러운 일러스트 (그라디언트)
+  minimalist, // C) 미니멀 (이모지)
+}
 
 /// 메인 어항 화면 - 새로운 아키텍처
 class AquariumScreen extends StatefulWidget {
@@ -24,11 +31,13 @@ class _AquariumScreenState extends State<AquariumScreen>
   late Offset _targetPosition;
   String? _displayedMessage;
   bool _showMessage = false;
+  late FishRenderStyle _renderStyle;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimation();
+    _renderStyle = FishRenderStyle.pixelArt; // B) 기본값: 픽셀 아트
   }
 
   void _initializeAnimation() {
@@ -65,8 +74,8 @@ class _AquariumScreenState extends State<AquariumScreen>
   Offset _generateRandomTarget() {
     final random = Random();
     return Offset(
-      random.nextDouble() * 200,
-      random.nextDouble() * 150,
+      random.nextDouble() * 280,
+      random.nextDouble() * 220,
     );
   }
 
@@ -127,13 +136,13 @@ class _AquariumScreenState extends State<AquariumScreen>
             children: [
               Column(
                 children: [
-                  // Top 55% - Aquarium Section
+                  // Top 60% - Aquarium Section
                   SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.55,
+                    height: MediaQuery.of(context).size.height * 0.60,
                     child: _buildAquariumSection(context, userData),
                   ),
 
-                  // Bottom 45% - Task List Section
+                  // Bottom 40% - Task List Section
                   Expanded(
                     child: _buildMissionArea(context, userData),
                   ),
@@ -155,7 +164,7 @@ class _AquariumScreenState extends State<AquariumScreen>
         .where((quest) => quest.date == userData.currentDate)
         .toList();
     final completedCount = todayQuests.where((q) => q.completed).length;
-    final shouldShowFish = completedCount >= 3;
+    final shouldShowFish = completedCount >= 4;
 
     return Container(
       decoration: BoxDecoration(
@@ -177,45 +186,58 @@ class _AquariumScreenState extends State<AquariumScreen>
             child: _buildHUD(context, fish, userData.gold),
           ),
 
+          // Render Style Toggle (Top-Right) - B & C Options
+          Positioned(
+            top: 16,
+            right: 16,
+            child: _buildRenderStyleToggle(),
+          ),
+
           // Aquarium with animated fish
           Center(
-            child: GestureDetector(
-              onTap: shouldShowFish ? _onFishTapped : null,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Aquarium background
-                  Container(
-                    width: 340,
-                    height: 260,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.primaryPastel.withOpacity(0.3),
-                        width: 2,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final aquariumWidth = (constraints.maxWidth - 24).clamp(340.0, 420.0);
+                final aquariumHeight = (constraints.maxHeight - 28).clamp(280.0, 360.0);
+
+                return GestureDetector(
+                  onTap: shouldShowFish ? _onFishTapped : null,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: aquariumWidth,
+                        height: aquariumHeight,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: AppColors.primaryPastel.withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: SizedBox.expand(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            switchInCurve: Curves.easeOutBack,
+                            switchOutCurve: Curves.easeIn,
+                            transitionBuilder: (child, animation) {
+                              final scale = Tween<double>(begin: 0.9, end: 1.0).animate(animation);
+                              return FadeTransition(
+                                opacity: animation,
+                                child: ScaleTransition(scale: scale, child: child),
+                              );
+                            },
+                            child: shouldShowFish
+                                ? _buildHatchedFish(fish)
+                                : _buildEggPlaceholder(completedCount),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: SizedBox.expand(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 400),
-                        switchInCurve: Curves.easeOutBack,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, animation) {
-                          final scale = Tween<double>(begin: 0.9, end: 1.0).animate(animation);
-                          return FadeTransition(
-                            opacity: animation,
-                            child: ScaleTransition(scale: scale, child: child),
-                          );
-                        },
-                        child: shouldShowFish
-                            ? _buildHatchedFish(fish)
-                            : _buildEggPlaceholder(completedCount),
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -224,18 +246,35 @@ class _AquariumScreenState extends State<AquariumScreen>
   }
 
   Widget _buildEggPlaceholder(int completedCount) {
+    final crackLevel = completedCount.clamp(0, 3);
+
     return Center(
       key: const ValueKey<String>('egg'),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            '🥚',
-            style: TextStyle(fontSize: 64),
+          SizedBox(
+            width: 96,
+            height: 96,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Text(
+                  '🥚',
+                  style: TextStyle(fontSize: 74),
+                ),
+                if (crackLevel > 0)
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _EggCrackPainter(crackLevel: crackLevel),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            '미션 3개를 완료하면\n알이 부화합니다',
+            '미션 4개를 완료하면\n알이 부화합니다',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -245,13 +284,24 @@ class _AquariumScreenState extends State<AquariumScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            '$completedCount / 3',
+            '$completedCount / 4',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.primary.withOpacity(0.7),
             ),
           ),
+          if (crackLevel > 0) ...[
+            const SizedBox(height: 6),
+            Text(
+              '실금 단계 $crackLevel',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary.withOpacity(0.8),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -268,10 +318,7 @@ class _AquariumScreenState extends State<AquariumScreen>
             top: _fishPosition.dy,
             child: GestureDetector(
               onTap: _onFishTapped,
-              child: Text(
-                fish.type.emoji,
-                style: const TextStyle(fontSize: 60),
-              ),
+              child: _buildFishByStyle(fish),
             ),
           ),
           if (_showMessage)
@@ -282,6 +329,158 @@ class _AquariumScreenState extends State<AquariumScreen>
               child: _buildSpeechBubble(_displayedMessage ?? ''),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFishByStyle(Fish fish) {
+    switch (_renderStyle) {
+      case FishRenderStyle.pixelArt:
+        return PixelFish(
+          fishType: fish.type,
+          growthStage: GrowthStage.adult,
+          size: 80,
+          level: fish.level,
+        );
+      case FishRenderStyle.smooth:
+        return _buildSmoothFish(fish);
+      case FishRenderStyle.minimalist:
+        return _buildMinimalistFish(fish);
+    }
+  }
+
+  Widget _buildSmoothFish(Fish fish) {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            Color(int.parse('0xFF${fish.type.colorHex.replaceFirst('#', '')}')),
+            Color(int.parse('0xFF${fish.type.colorHex.replaceFirst('#', '')}')).withOpacity(0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(int.parse('0xFF${fish.type.colorHex.replaceFirst('#', '')}')).withOpacity(0.3),
+            blurRadius: 12,
+            spreadRadius: 4,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          fish.type.emoji,
+          style: const TextStyle(fontSize: 56),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMinimalistFish(Fish fish) {
+    return Center(
+      child: Text(
+        fish.type.emoji,
+        style: const TextStyle(fontSize: 72),
+      ),
+    );
+  }
+
+  void switchRenderStyle(FishRenderStyle style) {
+    setState(() {
+      _renderStyle = style;
+    });
+  }
+
+  Widget _buildRenderStyleToggle() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryPastel.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '스타일',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textTertiary.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStyleButton(
+                'B',
+                FishRenderStyle.pixelArt,
+                '픽셀',
+              ),
+              const SizedBox(width: 4),
+              _buildStyleButton(
+                'C1',
+                FishRenderStyle.smooth,
+                '그라디언트',
+              ),
+              const SizedBox(width: 4),
+              _buildStyleButton(
+                'C2',
+                FishRenderStyle.minimalist,
+                '심플',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyleButton(
+    String label,
+    FishRenderStyle style,
+    String tooltip,
+  ) {
+    final isActive = _renderStyle == style;
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: () => switchRenderStyle(style),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppColors.primaryPastel.withOpacity(0.8)
+                : Colors.grey[300],
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isActive
+                  ? AppColors.primaryPastel
+                  : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: isActive ? Colors.white : Colors.grey[600],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -405,5 +604,64 @@ class _AquariumScreenState extends State<AquariumScreen>
         ),
       ),
     );
+  }
+}
+
+class _EggCrackPainter extends CustomPainter {
+  final int crackLevel;
+
+  _EggCrackPainter({required this.crackLevel});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final crackPaint = Paint()
+      ..color = const Color(0xFF8D6E63).withOpacity(0.8)
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final mainCrack = Path()
+      ..moveTo(size.width * 0.48, size.height * 0.22)
+      ..lineTo(size.width * 0.44, size.height * 0.36)
+      ..lineTo(size.width * 0.52, size.height * 0.48)
+      ..lineTo(size.width * 0.46, size.height * 0.62)
+      ..lineTo(size.width * 0.54, size.height * 0.76);
+    canvas.drawPath(mainCrack, crackPaint);
+
+    if (crackLevel >= 2) {
+      final sideCrackLeft = Path()
+        ..moveTo(size.width * 0.35, size.height * 0.44)
+        ..lineTo(size.width * 0.28, size.height * 0.52)
+        ..lineTo(size.width * 0.34, size.height * 0.60);
+
+      final sideCrackRight = Path()
+        ..moveTo(size.width * 0.62, size.height * 0.50)
+        ..lineTo(size.width * 0.70, size.height * 0.56)
+        ..lineTo(size.width * 0.64, size.height * 0.66);
+
+      canvas.drawPath(sideCrackLeft, crackPaint);
+      canvas.drawPath(sideCrackRight, crackPaint);
+    }
+
+    if (crackLevel >= 3) {
+      final topCrack = Path()
+        ..moveTo(size.width * 0.50, size.height * 0.16)
+        ..lineTo(size.width * 0.57, size.height * 0.26)
+        ..lineTo(size.width * 0.50, size.height * 0.34)
+        ..lineTo(size.width * 0.58, size.height * 0.42);
+
+      final bottomCrack = Path()
+        ..moveTo(size.width * 0.46, size.height * 0.68)
+        ..lineTo(size.width * 0.38, size.height * 0.76)
+        ..lineTo(size.width * 0.46, size.height * 0.84);
+
+      canvas.drawPath(topCrack, crackPaint);
+      canvas.drawPath(bottomCrack, crackPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _EggCrackPainter oldDelegate) {
+    return oldDelegate.crackLevel != crackLevel;
   }
 }
