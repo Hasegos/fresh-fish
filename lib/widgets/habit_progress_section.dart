@@ -5,7 +5,6 @@ import '../theme/app_text_styles.dart';
 /// 습관 진행도 섹션 위젯
 class HabitProgressSection extends StatelessWidget {
   final List<Quest> todayQuests;
-  final List<ToDo> todos;
   final Function(String)? onQuestToggle;
   final Function(String)? onTodoToggle;
   final VoidCallback? onDailyQuestTap;
@@ -13,7 +12,6 @@ class HabitProgressSection extends StatelessWidget {
   const HabitProgressSection({
     Key? key,
     required this.todayQuests,
-    required this.todos,
     this.onQuestToggle,
     this.onTodoToggle,
     this.onDailyQuestTap,
@@ -34,7 +32,6 @@ class HabitProgressSection extends StatelessWidget {
         ? (completedDailies / dailies.length) * 100
         : 0.0;
 
-    final activeTodos = todos.where((t) => !t.completed).toList();
     final completedText = completedDailies == 1
       ? '1 Mission Completed'
       : '$completedDailies Missions Completed';
@@ -103,15 +100,8 @@ class HabitProgressSection extends StatelessWidget {
               child: _buildQuestItem(quest),
             )),
 
-        // 상위 활성 할일
-        if (activeTodos.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: _buildTodoItem(activeTodos.first),
-          ),
-
         // 빈 상태
-        if (activeDailies.isEmpty && activeTodos.isEmpty)
+        if (activeDailies.isEmpty)
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(

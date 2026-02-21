@@ -122,16 +122,12 @@ class StorageService {
       gold: 0,
       currentDate: dateString,
       quests: _generateInitialQuests(selectedCategories, dateString),
-      habits: [],
       todos: [],
       history: [],
       onboardingCompleted: true,
       selectedCategories: selectedCategories,
       waterQuality: 100,
       achievements: [],
-      customRewards: [],
-      decorations: [],
-      ownedDecorations: [],
       timerSessions: [],
       timerCategories: defaultTimerCategories,
       pomodoroSettings: const PomodoroSettings(),
@@ -195,7 +191,6 @@ class StorageService {
     final todayStr = _formatDate(DateTime.now());
 
     final isNewUser = data.quests.isEmpty &&
-        data.habits.isEmpty &&
         data.todos.isEmpty &&
         data.history.isEmpty;
 
@@ -211,7 +206,6 @@ class StorageService {
       return data.copyWith(
         currentDate: todayStr,
         quests: [...nonDaily, ...dailyQuests],
-        habits: _resetHabitsForNewDay(data.habits),
       );
     }
 

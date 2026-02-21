@@ -3,49 +3,6 @@ import 'quest_model.dart';
 import 'timer_model.dart';
 import '../data/timer_categories.dart';
 
-/// [PlacedDecoration]
-/// 어항 내에 실제 배치된 장식의 정보를 담습니다.
-/// 유저가 장식을 어디에 두었는지 위치값(x, y)을 저장합니다.
-class PlacedDecoration {
-  final String decorationId;
-  final double x; // 화면 가로 위치 (%)
-  final double y; // 화면 세로 위치 (%)
-
-  PlacedDecoration({
-    required this.decorationId,
-    required this.x,
-    required this.y,
-  });
-
-  factory PlacedDecoration.fromJson(Map<String, dynamic> json) {
-    return PlacedDecoration(
-      decorationId: json['decorationId'] as String,
-      x: (json['x'] as num).toDouble(),
-      y: (json['y'] as num).toDouble(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'decorationId': decorationId,
-      'x': x,
-      'y': y,
-    };
-  }
-
-  PlacedDecoration copyWith({
-    String? decorationId,
-    double? x,
-    double? y,
-  }) {
-    return PlacedDecoration(
-      decorationId: decorationId ?? this.decorationId,
-      x: x ?? this.x,
-      y: y ?? this.y,
-    );
-  }
-}
-
 /// [DailyRecord]
 /// 특정 날짜의 수행 실적을 기록합니다.
 class DailyRecord {
@@ -130,54 +87,6 @@ enum RecordStatus {
   none;
 }
 
-/// [CustomReward]
-/// 유저가 직접 설정한 보상 아이템입니다.
-class CustomReward {
-  final String id;
-  final String title;
-  final int cost;
-  final bool claimed;
-
-  CustomReward({
-    required this.id,
-    required this.title,
-    required this.cost,
-    required this.claimed,
-  });
-
-  factory CustomReward.fromJson(Map<String, dynamic> json) {
-    return CustomReward(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      cost: json['cost'] as int,
-      claimed: json['claimed'] as bool? ?? false,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'cost': cost,
-      'claimed': claimed,
-    };
-  }
-
-  CustomReward copyWith({
-    String? id,
-    String? title,
-    int? cost,
-    bool? claimed,
-  }) {
-    return CustomReward(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      cost: cost ?? this.cost,
-      claimed: claimed ?? this.claimed,
-    );
-  }
-}
-
 /// [PomodoroSettings]
 /// 포모도로 모드 설정 정보입니다.
 class PomodoroSettings {
@@ -241,7 +150,6 @@ class UserData {
   final int gold;
   final String currentDate;
   final List<Quest> quests;
-  final List<Habit> habits;
   final List<ToDo> todos;
   final List<DailyRecord> history;
   final bool onboardingCompleted;
@@ -249,9 +157,6 @@ class UserData {
   final List<String> selectedCategories;
   final int waterQuality;
   final List<Achievement> achievements;
-  final List<CustomReward> customRewards;
-  final List<PlacedDecoration> decorations;
-  final List<String> ownedDecorations;
   final List<TimerSession> timerSessions;
   final List<TimerCategory> timerCategories;
   final PomodoroSettings pomodoroSettings;
@@ -262,7 +167,6 @@ class UserData {
     required this.gold,
     required this.currentDate,
     required this.quests,
-    required this.habits,
     required this.todos,
     required this.history,
     required this.onboardingCompleted,
@@ -270,9 +174,6 @@ class UserData {
     required this.selectedCategories,
     required this.waterQuality,
     required this.achievements,
-    required this.customRewards,
-    required this.decorations,
-    required this.ownedDecorations,
     required this.timerSessions,
     required this.timerCategories,
     required this.pomodoroSettings,
@@ -333,10 +234,6 @@ class UserData {
           ?.map((e) => Quest.fromJson(e as Map<String, dynamic>))
           .toList() ??
           [],
-      habits: (json['habits'] as List<dynamic>?)
-          ?.map((e) => Habit.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-          [],
       todos: (json['todos'] as List<dynamic>?)
           ?.map((e) => ToDo.fromJson(e as Map<String, dynamic>))
           .toList() ??
@@ -354,18 +251,6 @@ class UserData {
       waterQuality: json['waterQuality'] as int? ?? 100,
       achievements: (json['achievements'] as List<dynamic>?)
           ?.map((e) => Achievement.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-          [],
-      customRewards: (json['customRewards'] as List<dynamic>?)
-          ?.map((e) => CustomReward.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-          [],
-      decorations: (json['decorations'] as List<dynamic>?)
-          ?.map((e) => PlacedDecoration.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-          [],
-      ownedDecorations: (json['ownedDecorations'] as List<dynamic>?)
-          ?.map((e) => e as String)
           .toList() ??
           [],
       timerSessions: (json['timerSessions'] as List<dynamic>?)
@@ -387,7 +272,6 @@ class UserData {
       'gold': gold,
       'currentDate': currentDate,
       'quests': quests.map((e) => e.toJson()).toList(),
-      'habits': habits.map((e) => e.toJson()).toList(),
       'todos': todos.map((e) => e.toJson()).toList(),
       'history': history.map((e) => e.toJson()).toList(),
       'onboardingCompleted': onboardingCompleted,
@@ -395,9 +279,6 @@ class UserData {
       'selectedCategories': selectedCategories,
       'waterQuality': waterQuality,
       'achievements': achievements.map((e) => e.toJson()).toList(),
-      'customRewards': customRewards.map((e) => e.toJson()).toList(),
-      'decorations': decorations.map((e) => e.toJson()).toList(),
-      'ownedDecorations': ownedDecorations,
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
       'timerCategories': timerCategories.map((e) => e.toJson()).toList(),
       'pomodoroSettings': pomodoroSettings.toJson(),
@@ -410,7 +291,6 @@ class UserData {
     int? gold,
     String? currentDate,
     List<Quest>? quests,
-    List<Habit>? habits,
     List<ToDo>? todos,
     List<DailyRecord>? history,
     bool? onboardingCompleted,
@@ -418,8 +298,6 @@ class UserData {
     List<String>? selectedCategories,
     int? waterQuality,
     List<Achievement>? achievements,
-    List<CustomReward>? customRewards,
-    List<PlacedDecoration>? decorations,
     List<String>? ownedDecorations,
     List<TimerSession>? timerSessions,
     List<TimerCategory>? timerCategories,
@@ -431,7 +309,6 @@ class UserData {
       gold: gold ?? this.gold,
       currentDate: currentDate ?? this.currentDate,
       quests: quests ?? this.quests,
-      habits: habits ?? this.habits,
       todos: todos ?? this.todos,
       history: history ?? this.history,
       onboardingCompleted:
@@ -440,9 +317,6 @@ class UserData {
       selectedCategories: selectedCategories ?? this.selectedCategories,
       waterQuality: waterQuality ?? this.waterQuality,
       achievements: achievements ?? this.achievements,
-      customRewards: customRewards ?? this.customRewards,
-      decorations: decorations ?? this.decorations,
-      ownedDecorations: ownedDecorations ?? this.ownedDecorations,
       timerSessions: timerSessions ?? this.timerSessions,
       timerCategories: timerCategories ?? this.timerCategories,
       pomodoroSettings: pomodoroSettings ?? this.pomodoroSettings,
