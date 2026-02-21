@@ -33,7 +33,6 @@ class HabitProgressSection extends StatelessWidget {
     final dailyProgress = dailies.isNotEmpty
         ? (completedDailies / dailies.length) * 100
         : 0.0;
-    final activeDailies = dailies.where((q) => !q.completed).toList();
 
     final activeTodos = todos.where((t) => !t.completed).toList();
     final completedText = completedDailies == 1

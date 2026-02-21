@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../providers/app_provider.dart';
 import '../../providers/user_data_provider.dart';
 import '../../models/timer_model.dart';
@@ -10,6 +9,8 @@ import '../../data/timer_categories.dart';
 import '../../theme/app_colors.dart';
 import '../../services/notification_service.dart';
 
+/// [TimerScreen]
+/// 사용자가 특정 카테고리를 선택해 집중 시간을 측정하고 보상을 받는 화면입니다.
 class TimerScreen extends StatefulWidget {
   const TimerScreen({Key? key}) : super(key: key);
 
@@ -92,69 +93,9 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
     }
   }
 
-  // ✅ 단일 집중 모드: 타이머는 반드시 퀘스트와 연동되어야 함
-  String? _linkedQuestId;
-  String? _linkedQuestTitle;
-
-  // ✅ 팝업에서도 시간이 실시간으로 갱신되도록 공유하는 노티파이어
-  final ValueNotifier<int> _secondsNotifier = ValueNotifier<int>(0);
-
-  // ✅ 팝업 중복 방지
-  bool _oneHourPopupShown = false;
-  bool _isQuestClearDialogShowing = false;
-
-  // ✅ 1시간
-  // 테스트 = 5
-  static const int _oneHourSeconds = 60 * 60;
-
-  static const List<String> _fallbackColors = [
-    '#4FC3F7',
-    '#9575CD',
-    '#81C784',
-    '#FFB74D',
-    '#F06292',
-    '#90A4AE',
-    '#64B5F6',
-    '#AED581',
-  ];
-
-  // ✅ 라우트 arguments는 build 이후에 받는 게 안전해서 didChangeDependencies에서 1회 처리
-  bool _didApplyRouteArgs = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _restoreTimerState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didApplyRouteArgs) return;
-    _didApplyRouteArgs = true;
-
-    // ✅ quests_screen.dart에서 pushNamed('/timer', arguments:{questId, questTitle})로 넘어오는 값 수신
-    final args = ModalRoute.of(context)?.settings.arguments;
-
-    if (args is Map) {
-      final questId = args['questId']?.toString();
-      final questTitle = args['questTitle']?.toString();
-
-      if ((questId ?? '').trim().isNotEmpty) {
-        setState(() {
-          _linkedQuestId = questId;
-          _linkedQuestTitle =
-          (questTitle ?? '').trim().isEmpty ? null : questTitle;
-          _oneHourPopupShown = false;
-        });
-      }
-    }
-  }
-
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    // [Why] 화면을 벗어날 때 타이머를 멈추지 않으면 메모리 누수(Memory Leak)가 발생합니다.
     _timer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -199,13 +140,6 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
     await provider.startTimer(category);
 
     setState(() {
-      if (_selectedCategory != category && !_isRunning) {
-        _elapsedBefore = 0;
-        _seconds = 0;
-        _secondsNotifier.value = 0;
-        _oneHourPopupShown = false;
-      }
-
       _selectedCategory = category;
       _isRunning = true;
       _pomodoroPhase = PomodoroPhase.focus;
@@ -230,12 +164,7 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
     NotificationService.instance.cancelPomodoroNotifications();
     setState(() {
       _isRunning = false;
-      _elapsedBefore = _computeElapsedSeconds();
-      _seconds = _elapsedBefore;
-      _secondsNotifier.value = _seconds;
-      _startedAtMillis = null;
     });
-    _saveTimerState();
   }
 
   Future<void> _resumeTimer() async {
@@ -271,12 +200,12 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
     final focusSeconds = pomodoro.enabled && _pomodoroPhase == PomodoroPhase.focus
         ? _pomodoroPhaseSeconds
         : elapsedFromProvider;
-    
+
     debugPrint('⏹️ Timer Stop - focusSeconds: $focusSeconds, category: $_selectedCategory');
-    
+
     if (focusSeconds > 0 && _selectedCategory != null) {
       debugPrint('💾 Saving timer session: $_selectedCategory for $focusSeconds seconds');
-      
+
       await appProvider.completeTimerSession(
         category: _selectedCategory!,
         durationSeconds: focusSeconds,
@@ -286,7 +215,7 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
       // 메인 대시보드(UserDataProvider)가 즉시 반영되도록 동기화
       await context.read<UserDataProvider>().refreshUserData();
       if (!mounted) return;
-      
+
       debugPrint('✅ Timer session saved successfully');
 
       if (!mounted) return;
@@ -297,25 +226,8 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
           backgroundColor: Colors.green,
         ),
       );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⏱️ "${_linkedQuestTitle ?? '퀘스트'}"에 $minutes분 누적 저장됨'),
-            backgroundColor: Colors.black87,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('퀘스트 시간 누적 실패: $e')),
-        );
-      }
     }
-  }
 
-  void _resetTimerSessionState() {
     setState(() {
       _isRunning = false;
       _selectedCategory = null;
@@ -324,13 +236,9 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
       _completedFocusSessions = 0;
       _pomodoroPhaseStartMs = null;
     });
-    _storageService.clearTimerState();
   }
 
-  // ===========================================================
-  // ✅ 시간 계산/저장
-  // ===========================================================
-
+  /// 초 단위를 00:00:00 형식으로 변환
   String _formatTime(int seconds) {
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
@@ -414,10 +322,10 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
   }
 
   int _categoryTotalSeconds(
-    List<TimerSession> sessions,
-    String category, {
-    required bool onlyToday,
-  }) {
+      List<TimerSession> sessions,
+      String category, {
+        required bool onlyToday,
+      }) {
     final now = DateTime.now();
     var total = 0;
     for (final session in sessions) {
@@ -541,25 +449,25 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
                   },
                 ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );
   }
   Widget _buildHeroSection(
-    PomodoroSettings settings,
-    AppProvider provider,
-    int todayTotalSeconds,
-  ) {
+      PomodoroSettings settings,
+      AppProvider provider,
+      int todayTotalSeconds,
+      ) {
     final hasCategory = _selectedCategory != null;
     final currentRunningSeconds = provider.isTimerRunning
-      ? provider.activeTimerElapsedSecondsToday
-      : 0;
+        ? provider.activeTimerElapsedSecondsToday
+        : 0;
     final displaySeconds = settings.enabled
-      ? (_pomodoroPhaseDurationSeconds(settings) - (_isRunning ? _pomodoroPhaseSeconds : 0))
+        ? (_pomodoroPhaseDurationSeconds(settings) - (_isRunning ? _pomodoroPhaseSeconds : 0))
         .clamp(0, _pomodoroPhaseDurationSeconds(settings))
-      : todayTotalSeconds + currentRunningSeconds;
+        : todayTotalSeconds + currentRunningSeconds;
 
     return Container(
       width: double.infinity,
@@ -659,14 +567,13 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildCategoryRow({
+  Widget _buildCategoryCard({
     required TimerCategory category,
     required bool isSelected,
     required int totalSeconds,
     required VoidCallback? onTap,
   }) {
-    final baseColor = _parseColor(category.color);
-    final color = disabled ? Colors.grey : baseColor;
+    final color = _parseColor(category.color);
 
     return InkWell(
       onTap: onTap,
@@ -715,17 +622,8 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
                 fontWeight: FontWeight.w600,
                 color: isSelected ? color : AppColors.textSecondary,
               ),
-              const SizedBox(width: 10),
-              Text(
-                '카테고리 추가',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDisabled ? AppColors.textTertiary : AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

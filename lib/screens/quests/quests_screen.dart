@@ -12,21 +12,16 @@ class QuestsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Provider를 먼저 한 번만 가져오기
-    final provider = Provider.of<UserDataProvider>(context, listen: false);
-    
-    return Scaffold( // 화면 골격(배경, body)
+    return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea( // 노치/상단바 영역 피해서 UI 배치
-        child: Consumer<UserDataProvider>( // Provider 값이 바뀌면 builder 재실행 -> UI 갱신
-          builder: (context, watchProvider, child) { // builder로 provider를 받아서 데이터 기반 렌더링
-            if (watchProvider.isLoading) { // 로딩 중이라면 리스트 대신 로딩 위젯 표시
+      body: SafeArea(
+        child: Consumer<UserDataProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
               return const LoadingIndicator(message: '로딩 중...');
             }
 
-            // userData null 처리
-            // 데이터가 아직 없거나 로드 실패 등으로 null이라면 에러 상태 UI
-            final userData = watchProvider.userData;
+            final userData = provider.userData;
             if (userData == null) {
               return const EmptyState(
                 message: '데이터를 불러올 수 없습니다',
@@ -51,35 +46,14 @@ class QuestsScreen extends StatelessWidget {
                   )
                       : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    children: [
-                      if (quests.isEmpty)
-                        _buildEmptyText('등록된 퀘스트가 없습니다')
-                      else
-                        ...quests.map(
-                              (q) => _buildQuestCard(context, q, watchProvider),
-                        ),
-                      const SizedBox(height: 16),
-                      _buildSectionHeader(
-                        '습관',
-                            () => _openHabitForm(
-                          context,
-                          provider,
-                          categories,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (habits.isEmpty)
-                        _buildEmptyText('등록된 습관이 없습니다')
-                      else
-                        ...habits.map(
-                              (h) => _buildHabitCard(
-                            context,
-                            h,
-                            watchProvider,
-                            categories,
-                          ),
-                        ),
-                    ],
+                    itemCount: allQuests.length,
+                    itemBuilder: (context, index) {
+                      return _buildQuestCard(
+                        context,
+                        allQuests[index],
+                        provider,
+                      );
+                    },
                   ),
                 ),
               ],
@@ -372,95 +346,40 @@ class QuestsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _completeQuest(
-      BuildContext context,
-      Quest quest,
-      UserDataProvider provider,
-      ) async {
-    // 다음 프레임에서 실행하여 위젯 트리 충돌 방지
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted) return;
-      await provider.completeQuestById(quest.id);
-      if (!context.mounted) return;
+  Future<void> _completeQuest(BuildContext context, Quest quest) async {
+    final provider = context.read<UserDataProvider>();
+    List<Achievement> newlyUnlocked = [];
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${quest.title} 완료!')),
+    try {
+      newlyUnlocked = await provider.completeQuest(
+        quest.id,
+        quest.expReward,
+        quest.goldReward,
       );
-    });
-  }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('퀘스트 완료 처리 실패: $e')),
+      );
+      return;
+    }
 
-  /// ✅ 수정: rootNavigator context 저장/재사용 제거 + await 후 mounted 체크
-  Future<void> _addQuest(
-      BuildContext context,
-      UserDataProvider provider,
-      List<String> categories,
-      ) async {
     if (!context.mounted) return;
-    final title = await CommonDialogs.showInputDialog(
-      context,
-      title: '퀘스트 추가',
-      hint: '퀘스트 이름',
-      confirmText: '추가',
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${quest.title} 완료! (+${quest.goldReward}G, +${quest.expReward}EXP)',
+        ),
+        backgroundColor: AppColors.statusSuccess,
+        duration: const Duration(seconds: 2),
+      ),
     );
 
-    if (!context.mounted) return;
-    if (title == null || title.trim().isEmpty) return;
-
-    final category = await CommonDialogs.showChoiceDialog<String>(
-      context,
-      title: '카테고리 선택',
-      choices: categories.map((c) => ChoiceItem(label: c, value: c)).toList(),
-    );
-
-    if (!context.mounted) return;
-    if (category == null) return;
-
-    final difficulty = await CommonDialogs.showChoiceDialog<Difficulty>(
-      context,
-      title: '난이도 선택',
-      choices: Difficulty.values
-          .map((d) => ChoiceItem(label: d.displayName, value: d))
-          .toList(),
-    );
-
-    if (!context.mounted) return;
-
-    // 다음 프레임에서 실행하여 dialog context와 분리
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        provider.createQuest(
-          title: title.trim(),
-          category: category,
-          difficulty: difficulty,
-          questType: QuestType.sub,
-        );
-      }
-    });
-  }
-
-  Future<void> _editQuest(
-      BuildContext context,
-      UserDataProvider provider,
-      Quest quest,
-      ) async {
-    if (!context.mounted) return;
-    final rootContext = Navigator.of(context, rootNavigator: true).context;
-    final title = await CommonDialogs.showInputDialog(
-      rootContext,
-      title: '퀘스트 수정',
-      initialValue: quest.title,
-      confirmText: '저장',
-    );
-
-    if (!context.mounted) return;
-    if (title == null || title.trim().isEmpty) return;
-
-    // 다음 프레임에서 실행하여 dialog context와 분리
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        provider.updateQuest(quest.copyWith(title: title.trim()));
-      }
-    });
+    for (final a in newlyUnlocked) {
+      if (!context.mounted) return;
+      await _showAchievementPopup(context, icon: a.icon, title: a.title);
+    }
   }
 
   Future<void> _showAchievementPopup(
@@ -512,44 +431,16 @@ class QuestsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openHabitForm(
-      BuildContext context,
-      UserDataProvider provider,
-      List<String> categories, {
-        Habit? habit,
-      }) async {
-    if (!context.mounted) return;
-    final result = await CommonDialogs.showBottomSheet<HabitFormResult>(
-      context,
-      child: HabitFormSheet(
-        habit: habit,
-        categories: categories,
+  void _openQuestForm(BuildContext context, {Quest? quest}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _QuestFormSheet(existing: quest),
     );
-
-    if (!context.mounted || result == null) return;
-
-    // 다음 프레임에서 실행하여 dialog context와 분리
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      
-      if (habit == null) {
-        provider.createHabit(
-          title: result.title,
-          category: result.category,
-          difficulty: result.difficulty,
-        );
-      } else {
-        provider.updateHabit(
-          habit.copyWith(
-            title: result.title,
-            category: result.category,
-            difficulty: result.difficulty,
-          ),
-        );
-      }
-    });
   }
 
   void _confirmDeleteQuest(BuildContext context, String questId) {

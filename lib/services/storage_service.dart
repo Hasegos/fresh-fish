@@ -102,9 +102,9 @@ class StorageService {
 
   /// 초기 사용자 생성
   UserData createInitialUser(
-    FishType fishType,
-    List<String> selectedCategories,
-  ) {
+      FishType fishType,
+      List<String> selectedCategories,
+      ) {
     final now = DateTime.now();
     final dateString = _formatDate(now);
 
@@ -136,28 +136,6 @@ class StorageService {
       timerCategories: defaultTimerCategories,
       pomodoroSettings: const PomodoroSettings(),
     );
-  }
-
-  Future<void> saveTimerState(TimerRunState state) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_timerStateKey, json.encode(state.toJson()));
-  }
-
-  Future<TimerRunState?> getTimerState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_timerStateKey);
-    if (raw == null) return null;
-    try {
-      final jsonMap = json.decode(raw) as Map<String, dynamic>;
-      return TimerRunState.fromJson(jsonMap);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> clearTimerState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_timerStateKey);
   }
 
   /// 초기 퀘스트 생성
@@ -258,7 +236,7 @@ class StorageService {
       }
 
       final lastCompleted =
-          DateTime.fromMillisecondsSinceEpoch(habit.lastCompletedAt!);
+      DateTime.fromMillisecondsSinceEpoch(habit.lastCompletedAt!);
       final isSameDay = lastCompleted.year == today.year &&
           lastCompleted.month == today.month &&
           lastCompleted.day == today.day;

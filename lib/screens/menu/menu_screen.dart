@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../calendar/calendar_screen.dart';
-import '../shop/shop_screen.dart';
 import '../settings/settings_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -58,24 +57,6 @@ class MenuScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const CalendarScreen(),
-                    ),
-                  );
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              _buildMenuCard(
-                context,
-                icon: Icons.store,
-                title: 'Shop',
-                subtitle: '아이템 구매 및 장식',
-                color: const Color(0xFFFFB74D),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ShopScreen(),
                     ),
                   );
                 },

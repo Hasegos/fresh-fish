@@ -279,17 +279,6 @@ class AppProvider extends ChangeNotifier {
         data.copyWith(timerSessions: [...data.timerSessions, session]));
   }
 
-  Future<void> addTimerCategory(TimerCategory category) async {
-    if (_userData == null) return;
-
-    final exists = _userData!.timerCategories
-        .any((c) => c.name.trim() == category.name.trim());
-    if (exists) return;
-
-    final updated = [..._userData!.timerCategories, category];
-    await updateUserData((data) => data.copyWith(timerCategories: updated));
-  }
-
   /// 공통 보상 적용 시스템 (레벨업 로직 포함)
   Future<void> _applyRewards({required int exp, required int gold, required UserData Function(UserData) updater}) async {
     debugPrint('🎁 _applyRewards: exp=$exp, gold=$gold');
