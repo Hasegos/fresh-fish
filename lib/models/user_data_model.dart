@@ -178,6 +178,60 @@ class CustomReward {
   }
 }
 
+/// [PomodoroSettings]
+/// 포모도로 모드 설정 정보입니다.
+class PomodoroSettings {
+  final bool enabled;
+  final int focusMinutes;
+  final int shortBreakMinutes;
+  final int longBreakMinutes;
+  final int sessionsPerCycle;
+
+  const PomodoroSettings({
+    this.enabled = false,
+    this.focusMinutes = 25,
+    this.shortBreakMinutes = 5,
+    this.longBreakMinutes = 15,
+    this.sessionsPerCycle = 4,
+  });
+
+  factory PomodoroSettings.fromJson(Map<String, dynamic> json) {
+    return PomodoroSettings(
+      enabled: json['enabled'] as bool? ?? false,
+      focusMinutes: json['focusMinutes'] as int? ?? 25,
+      shortBreakMinutes: json['shortBreakMinutes'] as int? ?? 5,
+      longBreakMinutes: json['longBreakMinutes'] as int? ?? 15,
+      sessionsPerCycle: json['sessionsPerCycle'] as int? ?? 4,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'enabled': enabled,
+      'focusMinutes': focusMinutes,
+      'shortBreakMinutes': shortBreakMinutes,
+      'longBreakMinutes': longBreakMinutes,
+      'sessionsPerCycle': sessionsPerCycle,
+    };
+  }
+
+  PomodoroSettings copyWith({
+    bool? enabled,
+    int? focusMinutes,
+    int? shortBreakMinutes,
+    int? longBreakMinutes,
+    int? sessionsPerCycle,
+  }) {
+    return PomodoroSettings(
+      enabled: enabled ?? this.enabled,
+      focusMinutes: focusMinutes ?? this.focusMinutes,
+      shortBreakMinutes: shortBreakMinutes ?? this.shortBreakMinutes,
+      longBreakMinutes: longBreakMinutes ?? this.longBreakMinutes,
+      sessionsPerCycle: sessionsPerCycle ?? this.sessionsPerCycle,
+    );
+  }
+}
+
 /// [UserData]
 /// 애플리케이션의 최상위 데이터 모델입니다.
 /// 모든 리스트와 상태 정보를 포함하며, UI에서 접근하기 쉬운 계산 로직을 포함합니다.
@@ -200,6 +254,7 @@ class UserData {
   final List<String> ownedDecorations;
   final List<TimerSession> timerSessions;
   final List<TimerCategory> timerCategories;
+  final PomodoroSettings pomodoroSettings;
 
   UserData({
     required this.id,
@@ -220,6 +275,7 @@ class UserData {
     required this.ownedDecorations,
     required this.timerSessions,
     required this.timerCategories,
+    required this.pomodoroSettings,
   });
 
   // --- UI 편의를 위한 계산 로직 (Getters) ---
@@ -314,19 +370,13 @@ class UserData {
           [],
       timerSessions: (json['timerSessions'] as List<dynamic>?)
           ?.map((e) => TimerSession.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-          [],
+          .toList() ?? [],
       timerCategories: (json['timerCategories'] as List<dynamic>?)
-          ?.map((e) {
-        final map = e as Map<String, dynamic>;
-        return TimerCategory(
-          name: map['name'] as String,
-          icon: map['icon'] as String,
-          color: map['color'] as String,
-        );
-      })
-          .toList() ??
-          defaultTimerCategories,
+          ?.map((e) => TimerCategory.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      pomodoroSettings: json['pomodoroSettings'] == null
+          ? const PomodoroSettings()
+          : PomodoroSettings.fromJson(json['pomodoroSettings'] as Map<String, dynamic>),
     );
   }
 
@@ -349,8 +399,8 @@ class UserData {
       'decorations': decorations.map((e) => e.toJson()).toList(),
       'ownedDecorations': ownedDecorations,
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
-      'timerCategories':
-      timerCategories.map((e) => {'name': e.name, 'icon': e.icon, 'color': e.color}).toList(),
+      'timerCategories': timerCategories.map((e) => e.toJson()).toList(),
+      'pomodoroSettings': pomodoroSettings.toJson(),
     };
   }
 
@@ -373,6 +423,7 @@ class UserData {
     List<String>? ownedDecorations,
     List<TimerSession>? timerSessions,
     List<TimerCategory>? timerCategories,
+    PomodoroSettings? pomodoroSettings,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -394,6 +445,7 @@ class UserData {
       ownedDecorations: ownedDecorations ?? this.ownedDecorations,
       timerSessions: timerSessions ?? this.timerSessions,
       timerCategories: timerCategories ?? this.timerCategories,
+      pomodoroSettings: pomodoroSettings ?? this.pomodoroSettings,
     );
   }
 }

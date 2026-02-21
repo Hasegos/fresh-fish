@@ -24,6 +24,11 @@ class HabitProgressSection extends StatelessWidget {
     final dailies = todayQuests
         .where((q) => q.questType == QuestType.daily)
         .toList();
+    
+    // [Fix] 완료된 미션은 홈 화면에서 제거
+    final activeDailies = dailies.where((q) => !q.completed).toList();
+    
+    // 진행도 계산은 전체 기준으로 (완료된 것도 포함)
     final completedDailies = dailies.where((q) => q.completed).length;
     final dailyProgress = dailies.isNotEmpty
         ? (completedDailies / dailies.length) * 100

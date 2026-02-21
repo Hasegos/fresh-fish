@@ -81,6 +81,25 @@ class StorageService {
     }
   }
 
+  Future<void> saveTimerState(TimerState state) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = json.encode(state.toJson());
+    await prefs.setString(_timerStateKey, jsonString);
+  }
+
+  Future<TimerState?> getTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_timerStateKey);
+    if (jsonString == null) return null;
+    final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+    return TimerState.fromJson(jsonMap);
+  }
+
+  Future<void> clearTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_timerStateKey);
+  }
+
   /// 초기 사용자 생성
   UserData createInitialUser(
     FishType fishType,
@@ -115,6 +134,7 @@ class StorageService {
       ownedDecorations: [],
       timerSessions: [],
       timerCategories: defaultTimerCategories,
+      pomodoroSettings: const PomodoroSettings(),
     );
   }
 

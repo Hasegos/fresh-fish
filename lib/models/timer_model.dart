@@ -58,6 +58,22 @@ class TimerCategory {
     required this.color,
   });
 
+  factory TimerCategory.fromJson(Map<String, dynamic> json) {
+    return TimerCategory(
+      name: json['name'] as String,
+      icon: json['icon'] as String,
+      color: json['color'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'icon': icon,
+      'color': color,
+    };
+  }
+
   Color toColor() {
     final buffer = StringBuffer();
     if (color.length == 6 || color.length == 7) buffer.write('ff');
@@ -66,36 +82,56 @@ class TimerCategory {
   }
 }
 
-/// [TimerRunState]
-/// 백그라운드 타이머 상태를 로컬에 저장하기 위한 모델입니다.
-class TimerRunState {
-  final bool isRunning;
-  final String? category;
+/// [TimerState]
+/// 백그라운드 복원을 위한 타이머 상태 정보입니다.
+class TimerState {
+  final String category;
   final int elapsedSeconds;
-  final int? startedAtMillis;
+  final int? startMs;
+  final int? startedAtMs;
+  final bool isRunning;
 
-  const TimerRunState({
-    required this.isRunning,
+  const TimerState({
     required this.category,
     required this.elapsedSeconds,
-    required this.startedAtMillis,
+    required this.startMs,
+    required this.startedAtMs,
+    required this.isRunning,
   });
 
-  factory TimerRunState.fromJson(Map<String, dynamic> json) {
-    return TimerRunState(
-      isRunning: json['isRunning'] as bool? ?? false,
-      category: json['category'] as String?,
+  factory TimerState.fromJson(Map<String, dynamic> json) {
+    return TimerState(
+      category: json['category'] as String,
       elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
-      startedAtMillis: json['startedAtMillis'] as int?,
+      startMs: json['startMs'] as int?,
+      startedAtMs: json['startedAtMs'] as int?,
+      isRunning: json['isRunning'] as bool? ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'isRunning': isRunning,
       'category': category,
       'elapsedSeconds': elapsedSeconds,
-      'startedAtMillis': startedAtMillis,
+      'startMs': startMs,
+      'startedAtMs': startedAtMs,
+      'isRunning': isRunning,
     };
+  }
+
+  TimerState copyWith({
+    String? category,
+    int? elapsedSeconds,
+    int? startMs,
+    int? startedAtMs,
+    bool? isRunning,
+  }) {
+    return TimerState(
+      category: category ?? this.category,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      startMs: startMs ?? this.startMs,
+      startedAtMs: startedAtMs ?? this.startedAtMs,
+      isRunning: isRunning ?? this.isRunning,
+    );
   }
 }

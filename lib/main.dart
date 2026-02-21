@@ -6,26 +6,31 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
 import 'providers/user_data_provider.dart';
+import 'services/notification_service.dart';
+import 'screens/app_screen.dart';
 import 'screens/main/main_screen.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
-
-// ✅ timer_screen.dart import는 이제 필요 없으면 지워도 됨
-// (단독 TimerScreen route를 쓰지 않을 거라서)
-// import 'screens/timer/timer_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  runApp(const FishQuestApp());
+
+  _bootstrapServices();
+}
+
+Future<void> _bootstrapServices() async {
   try {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSy...",
-        appId: "1:12345:android:...",
-        messagingSenderId: "12345...",
-        projectId: "your-project-id",
-      ),
-    );
+    await NotificationService.instance
+        .initialize()
+        .timeout(const Duration(seconds: 3));
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('⚠️ NotificationService 초기화 실패/타임아웃: $e');
+    }
+  }
+
+  try {
+    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
     if (kDebugMode) {
       debugPrint('✅ Firebase 초기화 성공');
     }
@@ -51,8 +56,6 @@ Future<void> main() async {
       debugPrint('⚠️ Firebase 초기화 실패(기타): $e');
     }
   }
-
-  runApp(const FishQuestApp());
 }
 
 class FishQuestApp extends StatelessWidget {
@@ -73,17 +76,46 @@ class FishQuestApp extends StatelessWidget {
         title: 'Fresh Fish - 자기계발 습관 추적기',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        initialRoute: '/login',
         routes: {
-          '/login': (_) => const LoginScreen(),
-          '/signup': (_) => const SignupScreen(),
-
-          // ✅ 기본 홈(탭 0)
-          '/home': (_) => const MainScreen(),
-
-          // ✅ 타이머 탭(보통 2번 인덱스)
-          '/timer': (_) => const MainScreen(initialIndex: 2),
+          '/home': (context) => const MainScreen(),
         },
+        home: Consumer<AppProvider>(
+          builder: (context, appProvider, _) {
+            if (kDebugMode) {
+              debugPrint('🔍 AppProvider 상태: isLoading=${appProvider.isLoading}, isOnboardingComplete=${appProvider.isOnboardingComplete}, userData=${appProvider.userData}');
+            }
+
+            if (appProvider.isLoading) {
+              return _buildLoadingScreen();
+            }
+
+            if (!appProvider.isOnboardingComplete) {
+              return const OnboardingFlow();
+            }
+
+            return const MainScreen();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('🐠', style: TextStyle(fontSize: 80)),
+            SizedBox(height: 24),
+            CircularProgressIndicator(color: Color(0xFF4FC3F7)),
+            SizedBox(height: 16),
+            Text(
+              'My Tiny Aquarium',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }

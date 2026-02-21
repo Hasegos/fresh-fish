@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../data/timer_categories.dart';
 import '../providers/app_provider.dart';
 import '../providers/user_data_provider.dart';
 import '../data/timer_categories.dart';
@@ -120,6 +121,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         ownedDecorations: [],
         timerSessions: [],
         timerCategories: defaultTimerCategories,
+        pomodoroSettings: const PomodoroSettings(),
       );
 
       debugPrint('✅ UserData 생성 완료: $userId');
