@@ -138,6 +138,28 @@ class StorageService {
     );
   }
 
+  Future<void> saveTimerState(TimerRunState state) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_timerStateKey, json.encode(state.toJson()));
+  }
+
+  Future<TimerRunState?> getTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_timerStateKey);
+    if (raw == null) return null;
+    try {
+      final jsonMap = json.decode(raw) as Map<String, dynamic>;
+      return TimerRunState.fromJson(jsonMap);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> clearTimerState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_timerStateKey);
+  }
+
   /// 초기 퀘스트 생성
   List<Quest> _generateInitialQuests(List<String> categories, String date) {
     final quests = <Quest>[];

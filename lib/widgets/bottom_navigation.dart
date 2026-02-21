@@ -4,6 +4,7 @@ import '../theme/app_text_styles.dart';
 
 /// 하단 네비게이션 바 위젯
 class BottomNavigation extends StatelessWidget {
+  static const double height = 56;
   final int currentIndex;
   final ValueChanged<int> onTap;
 
@@ -15,7 +16,9 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
+      height: height + bottomInset,
       decoration: BoxDecoration(
         color: AppColors.surface,
         boxShadow: [

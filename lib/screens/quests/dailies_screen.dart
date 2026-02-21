@@ -293,7 +293,11 @@ class DailiesScreen extends StatelessWidget {
     Quest quest,
     UserDataProvider provider,
   ) async {
-    await provider.completeQuestById(quest.id);
+    await provider.completeQuest(
+      quest.id,
+      quest.expReward,
+      quest.goldReward,
+    );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -7,7 +7,13 @@ import '../../widgets/bottom_navigation.dart';
 
 /// 메인 화면 (하단 네비게이션 포함)
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  /// ✅ 외부 라우트에서 특정 탭으로 바로 열기 위한 초기 인덱스
+  final int initialIndex;
+
+  const MainScreen({
+    Key? key,
+    this.initialIndex = 0,
+  }) : super(key: key);
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -36,6 +42,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         },
       ),
     ];
+
+    // ✅ pages 길이를 넘어가는 값 방지 (안전장치)
+    final maxIndex = _pages.length - 1;
+    _currentIndex = widget.initialIndex.clamp(0, maxIndex);
   }
 
   @override

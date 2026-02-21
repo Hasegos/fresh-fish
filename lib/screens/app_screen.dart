@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../data/timer_categories.dart';
 import '../providers/app_provider.dart';
 import '../providers/user_data_provider.dart';
+import '../data/timer_categories.dart';
 import '../models/fish_model.dart';
 import '../models/user_data_model.dart';
 import '../utils/quest_utils.dart';
