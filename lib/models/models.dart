@@ -2,4 +2,3 @@
 export 'fish_model.dart';
 export 'quest_model.dart';
 export 'user_data_model.dart';
-export 'decoration_model.dart';
