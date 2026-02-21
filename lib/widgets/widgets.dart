@@ -28,5 +28,4 @@ export 'common/honesty_check_dialog.dart';
 export 'common/confirm_dialog.dart';
 
 // 기존 위젯들
-export 'aquarium_viewport.dart';
 export 'bottom_navigation.dart';
