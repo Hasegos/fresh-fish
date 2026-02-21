@@ -228,17 +228,42 @@ class UserData {
   String get _todayStr => DateTime.now().toIso8601String().split('T')[0];
 
   // 오늘 완료한 퀘스트 개수
-  int get todayCompletedQuests => quests
-      .where((q) => q.date.toString() == _todayStr && q.completed)
-      .length;
+  int get todayCompletedQuests =>
+      quests.where((q) => q.date.toString() == _todayStr && q.completed).length;
 
   // 오늘 전체 퀘스트 개수
-  int get todayTotalQuests => quests
-      .where((q) => q.date.toString() == _todayStr)
-      .length;
+  int get todayTotalQuests =>
+      quests.where((q) => q.date.toString() == _todayStr).length;
 
   // 완료한 ToDo 개수
   int get completedTodos => todos.where((t) => t.completed).length;
+
+  // ✅ 큰 퀘스트 클리어 누적(스냅샷 우선 + 구버전 fallback)
+  int get bigQuestClears {
+    bool isBigQuestFallback(Quest q) {
+      final timer = q.durationMinutes ?? 0;
+      final checklist = q.checklistCompletedCount ?? 0;
+
+      final conditionA = (timer >= 60) && (q.difficulty.index >= Difficulty.normal.index);
+      final conditionB = (checklist >= 5);
+      return conditionA || conditionB;
+    }
+
+    int cnt = 0;
+    for (final q in quests) {
+      if (q.completed != true) continue;
+
+      if (q.isBigQuest == true) {
+        cnt++;
+        continue;
+      }
+      if (q.isBigQuest == false) continue;
+
+      // 스냅샷이 없는 구버전 데이터는 현재 필드로 fallback 계산
+      if (isBigQuestFallback(q)) cnt++;
+    }
+    return cnt;
+  }
 
   // ---------------------------------------
 
@@ -250,44 +275,58 @@ class UserData {
       currentDate: json['currentDate'] as String,
       quests: (json['quests'] as List<dynamic>?)
           ?.map((e) => Quest.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       habits: (json['habits'] as List<dynamic>?)
           ?.map((e) => Habit.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       todos: (json['todos'] as List<dynamic>?)
           ?.map((e) => ToDo.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       history: (json['history'] as List<dynamic>?)
           ?.map((e) => DailyRecord.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
       notificationTime: json['notificationTime'] as String?,
       selectedCategories: (json['selectedCategories'] as List<dynamic>?)
           ?.map((e) => e as String)
-          .toList() ?? [],
+          .toList() ??
+          [],
       waterQuality: json['waterQuality'] as int? ?? 100,
       achievements: (json['achievements'] as List<dynamic>?)
           ?.map((e) => Achievement.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       customRewards: (json['customRewards'] as List<dynamic>?)
           ?.map((e) => CustomReward.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       decorations: (json['decorations'] as List<dynamic>?)
           ?.map((e) => PlacedDecoration.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+          .toList() ??
+          [],
       ownedDecorations: (json['ownedDecorations'] as List<dynamic>?)
           ?.map((e) => e as String)
-          .toList() ?? [],
+          .toList() ??
+          [],
       timerSessions: (json['timerSessions'] as List<dynamic>?)
           ?.map((e) => TimerSession.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
-        timerCategories: (json['timerCategories'] as List<dynamic>?)
-          ?.map((e) => TimerCategory(
-            name: (e as Map<String, dynamic>)['name'] as String,
-            icon: (e)['icon'] as String,
-            color: (e)['color'] as String,
-            ))
-          .toList() ?? defaultTimerCategories,
+          .toList() ??
+          [],
+      timerCategories: (json['timerCategories'] as List<dynamic>?)
+          ?.map((e) {
+        final map = e as Map<String, dynamic>;
+        return TimerCategory(
+          name: map['name'] as String,
+          icon: map['icon'] as String,
+          color: map['color'] as String,
+        );
+      })
+          .toList() ??
+          defaultTimerCategories,
     );
   }
 
@@ -310,9 +349,8 @@ class UserData {
       'decorations': decorations.map((e) => e.toJson()).toList(),
       'ownedDecorations': ownedDecorations,
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
-      'timerCategories': timerCategories
-          .map((e) => {'name': e.name, 'icon': e.icon, 'color': e.color})
-          .toList(),
+      'timerCategories':
+      timerCategories.map((e) => {'name': e.name, 'icon': e.icon, 'color': e.color}).toList(),
     };
   }
 
@@ -345,7 +383,8 @@ class UserData {
       habits: habits ?? this.habits,
       todos: todos ?? this.todos,
       history: history ?? this.history,
-      onboardingCompleted: onboardingCompleted != null ? onboardingCompleted : this.onboardingCompleted,
+      onboardingCompleted:
+      onboardingCompleted != null ? onboardingCompleted : this.onboardingCompleted,
       notificationTime: notificationTime ?? this.notificationTime,
       selectedCategories: selectedCategories ?? this.selectedCategories,
       waterQuality: waterQuality ?? this.waterQuality,

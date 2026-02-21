@@ -229,6 +229,7 @@ class AchievementsScreen extends StatelessWidget {
     }).toList();
   }
 
+  /// ✅ UserDataProvider의 _achievementOrder() 와 "타이틀을 완전히 동일"하게 유지해야 함
   List<_AchievementSeed> _achievementOrder() {
     return const <_AchievementSeed>[
       _AchievementSeed('첫 퀘스트 만들기 (퀘스트 1개 생성)', '📝'),
@@ -254,7 +255,13 @@ class AchievementsScreen extends StatelessWidget {
       _AchievementSeed('자기관리 퀘스트 20개 완료', '🧴'),
       _AchievementSeed('쉬움 퀘스트 30개 완료', '🙂'),
       _AchievementSeed('어려움 퀘스트 10개 완료', '😤'),
-      _AchievementSeed('큰 퀘스트 클리어 (예: 60분 이상/난이도 상) 1회', '🏁'),
+
+      // ✅ 큰 퀘스트 업적: Provider와 타이틀 일치 (1/10/50/100)
+      _AchievementSeed('큰 퀘스트 클리어 1회', '🏁'),
+      _AchievementSeed('큰 퀘스트 클리어 10회', '🔥'),
+      _AchievementSeed('큰 퀘스트 클리어 50회', '⚔️'),
+      _AchievementSeed('큰 퀘스트 클리어 100회', '👑'),
+
       _AchievementSeed('마감 전 완료 10회 (데드라인 있으면)', '⏰'),
       _AchievementSeed('아침형 인간 (06~09시 완료 10회)', '🌅'),
       _AchievementSeed('야행성 (23시 이후 완료 10회)', '🌙'),
