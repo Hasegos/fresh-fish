@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:198885947824:android:f9cf58a8bb8a9b64babe75",
+        "android_client_info": {
+          "package_name": "com.example.fresh_aquarium_final"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSp4S42W10g6yUPU336eufiMuLdAmVoJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:198885947824:android:454de4fbe55bff66babe75",
         "android_client_info": {
           "package_name": "uc.vibecoding.fresh_fish"
