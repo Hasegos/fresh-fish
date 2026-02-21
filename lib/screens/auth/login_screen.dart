@@ -236,13 +236,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             _SocialButton(
                               onPressed: _isLoading ? null : _onGoogleLogin,
                               label: 'Google로 계속하기',
-                              leading: Image.asset(
+                              leading: Transform.translate(offset: const Offset(0, 4),
+                                child: Image.asset(
                                 'assets/images/google_logo.png',
                                 width: 20,
                                 height: 20,
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
-
                             const SizedBox(height: 10),
 
                             TextButton(

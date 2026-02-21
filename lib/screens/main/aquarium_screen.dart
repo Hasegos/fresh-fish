@@ -486,78 +486,83 @@ class _AquariumScreenState extends State<AquariumScreen>
   }
 
   Widget _buildHUD(BuildContext context, Fish fish, int gold) {
-    const expToNextLevel = 100;
-    final double expProgress = (fish.exp / expToNextLevel).clamp(0.0, 1.0);
+    final progress = (fish.exp / 100).clamp(0.0, 1.0);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Fish icon and level
-        Row(
-          children: [
-            Text(
-              fish.type.emoji,
-              style: const TextStyle(fontSize: 28),
-            ),
-            const SizedBox(width: 8),
-            Column(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            fish.type.emoji,
+            style: const TextStyle(fontSize: 20),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 90,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Lv. ${fish.level}',
+                  'Lv.${fish.level}',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(
-                  width: 120,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: expProgress,
-                      minHeight: 6,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryPastel,
-                      ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: AppColors.surfaceAlt,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryPastel,
                     ),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        // Coin display
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.highlightPink.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.highlightPink.withOpacity(0.3),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('💰', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(
+                  gold.toString(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('💰', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 4),
-              Text(
-                gold.toString(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -601,6 +606,7 @@ class _AquariumScreenState extends State<AquariumScreen>
           todos: userData.todos,
           onQuestToggle: (questId) =>
               context.read<UserDataProvider>().completeQuestById(questId),
+          onDailyQuestTap: () => widget.onNavChanged?.call(1),
         ),
       ),
     );
