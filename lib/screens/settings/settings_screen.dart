@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:device_apps/device_apps.dart';
 
 import '../../providers/app_provider.dart';
 import '../../models/user_data_model.dart';
@@ -73,6 +74,20 @@ class SettingsScreen extends StatelessWidget {
                           title: '언어',
                           subtitle: '한국어',
                           onTap: () => _showComingSoon(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildSection(
+                      title: '집중모드',
+                      children: [
+                        _buildSettingTile(
+                          context,
+                          icon: Icons.psychology,
+                          title: '집중모드',
+                          subtitle: p.userData?.focusModeEnabled ?? false ? '활성화' : '비활성화',
+                          onTap: () => _showFocusModeMenu(context, p),
                         ),
                       ],
                     ),
@@ -526,6 +541,271 @@ class SettingsScreen extends StatelessWidget {
   // -------------------------
   // Dialogs / Snackbars
   // -------------------------
+
+  Future<List<String>> _getInstalledApps() async {
+    try {
+      final apps = await DeviceApps.getInstalledApplications(
+        includeSystemApps: false,
+        onlyAppsWithLaunchIntent: true,
+      );
+      
+      return apps
+          .map((app) => app.appName)
+          .where((name) => name != 'Fresh Fish') // 자신의 앱 제외
+          .toList()
+          .take(20) // 처음 20개만 표시
+          .toList();
+    } catch (e) {
+      debugPrint('앱 목록 조회 실패: $e');
+      // 오류 시 기본 목록 반환
+      return [
+        'Chrome',
+        'Gmail',
+        'Maps',
+        'YouTube',
+        'Spotify',
+      ];
+    }
+  }
+
+  void _showFocusModeMenu(BuildContext context, AppProvider p) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setState) {
+            final userData = p.userData;
+            final focusModeEnabled = userData?.focusModeEnabled ?? false;
+            final allowedApps = userData?.allowedAppsInFocusMode ?? [];
+
+            // 기본 허용 앱
+            final defaultAllowedApps = [
+              'Fresh Fish',
+              'Phone',
+              'Messages',
+              'Emergency',
+            ];
+
+            return SingleChildScrollView(
+              child: Container(
+                padding: EdgeInsets.only(
+                  left: 24.0,
+                  right: 24.0,
+                  top: 24.0,
+                  bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24.0,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '집중모드 설정',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('집중모드 활성화'),
+                      subtitle: const Text('활성화된 앱만 사용 가능'),
+                      value: focusModeEnabled,
+                      onChanged: (value) async {
+                        await p.updateUserData(
+                          (data) => data.copyWith(focusModeEnabled: value),
+                        );
+                        if (sheetContext.mounted) {
+                          setState(() {});
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '기본 허용 앱',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // 기본 허용 앱 목록
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: defaultAllowedApps
+                          .map(
+                            (app) => _buildAppChip(
+                              app,
+                              _getAppIcon(app),
+                              allowedApps.contains(app),
+                              () async {
+                                await _toggleAllowedApp(p, app);
+                                setState(() {});
+                              },
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '추가로 허용할 앱',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '설치된 앱 중 선택하세요',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // 설치된 앱 목록 (동적 로드)
+                    FutureBuilder<List<String>>(
+                      future: _getInstalledApps(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primaryPastel,
+                              ),
+                            ),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return Text(
+                            '앱 목록을 불러올 수 없습니다: ${snapshot.error}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          );
+                        }
+
+                        final additionalApps = snapshot.data ?? [];
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: additionalApps
+                              .map(
+                                (app) => _buildAppChip(
+                                  app,
+                                  _getAppIcon(app),
+                                  allowedApps.contains(app),
+                                  () async {
+                                    await _toggleAllowedApp(p, app);
+                                    setState(() {});
+                                  },
+                                ),
+                              )
+                              .toList(),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                        ),
+                        child: const Text('완료'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  IconData _getAppIcon(String appName) {
+    switch (appName) {
+      case 'Fresh Fish':
+        return Icons.grain;
+      case 'Phone':
+        return Icons.phone;
+      case 'Messages':
+        return Icons.message;
+      case 'Emergency':
+        return Icons.emergency;
+      case 'Chrome':
+        return Icons.language;
+      case 'Gmail':
+        return Icons.mail;
+      case 'Maps':
+        return Icons.location_on;
+      case 'YouTube':
+        return Icons.play_circle;
+      case 'Spotify':
+        return Icons.music_note;
+      case 'Notion':
+        return Icons.note;
+      case 'Slack':
+        return Icons.chat;
+      case 'Zoom':
+        return Icons.video_camera_front;
+      default:
+        return Icons.apps;
+    }
+  }
+
+  Widget _buildAppChip(
+    String appName,
+    IconData icon,
+    bool isAllowed,
+    Future<void> Function() onTap,
+  ) {
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 6),
+          Text(appName),
+        ],
+      ),
+      selected: isAllowed,
+      onSelected: (_) async => await onTap(),
+      backgroundColor: AppColors.surface,
+      selectedColor: AppColors.primaryPastel.withOpacity(0.3),
+      side: BorderSide(
+        color: isAllowed ? AppColors.primaryPastel : AppColors.borderLight,
+        width: isAllowed ? 2 : 1,
+      ),
+    );
+  }
+
+  Future<void> _toggleAllowedApp(AppProvider provider, String appName) async {
+    final userData = provider.userData;
+    final currentAllowed = userData?.allowedAppsInFocusMode ?? [];
+    
+    final updatedList = currentAllowed.contains(appName)
+        ? currentAllowed.where((app) => app != appName).toList()
+        : [...currentAllowed, appName];
+
+    await provider.updateUserData(
+      (data) => data.copyWith(allowedAppsInFocusMode: updatedList),
+    );
+  }
 
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(

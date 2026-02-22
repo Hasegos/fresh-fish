@@ -222,24 +222,4 @@ class StorageService {
     return data;
   }
 
-  List<Habit> _resetHabitsForNewDay(List<Habit> habits) {
-    final today = DateTime.now();
-    return habits.map((habit) {
-      if (habit.lastCompletedAt == null) {
-        return habit.copyWith(completionCount: 0);
-      }
-
-      final lastCompleted =
-      DateTime.fromMillisecondsSinceEpoch(habit.lastCompletedAt!);
-      final isSameDay = lastCompleted.year == today.year &&
-          lastCompleted.month == today.month &&
-          lastCompleted.day == today.day;
-
-      if (isSameDay) {
-        return habit;
-      }
-
-      return habit.copyWith(completionCount: 0);
-    }).toList();
-  }
 }

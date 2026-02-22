@@ -1,7 +1,6 @@
 import 'fish_model.dart';
 import 'quest_model.dart';
 import 'timer_model.dart';
-import '../data/timer_categories.dart';
 
 /// [DailyRecord]
 /// 특정 날짜의 수행 실적을 기록합니다.
@@ -160,6 +159,8 @@ class UserData {
   final List<TimerSession> timerSessions;
   final List<TimerCategory> timerCategories;
   final PomodoroSettings pomodoroSettings;
+  final bool focusModeEnabled;
+  final List<String> allowedAppsInFocusMode;
 
   UserData({
     required this.id,
@@ -177,6 +178,8 @@ class UserData {
     required this.timerSessions,
     required this.timerCategories,
     required this.pomodoroSettings,
+    this.focusModeEnabled = false,
+    this.allowedAppsInFocusMode = const [],
   });
 
   // --- UI 편의를 위한 계산 로직 (Getters) ---
@@ -262,6 +265,10 @@ class UserData {
       pomodoroSettings: json['pomodoroSettings'] == null
           ? const PomodoroSettings()
           : PomodoroSettings.fromJson(json['pomodoroSettings'] as Map<String, dynamic>),
+      focusModeEnabled: json['focusModeEnabled'] as bool? ?? false,
+      allowedAppsInFocusMode: (json['allowedAppsInFocusMode'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ?? [],
     );
   }
 
@@ -282,6 +289,8 @@ class UserData {
       'timerSessions': timerSessions.map((e) => e.toJson()).toList(),
       'timerCategories': timerCategories.map((e) => e.toJson()).toList(),
       'pomodoroSettings': pomodoroSettings.toJson(),
+      'focusModeEnabled': focusModeEnabled,
+      'allowedAppsInFocusMode': allowedAppsInFocusMode,
     };
   }
 
@@ -302,6 +311,8 @@ class UserData {
     List<TimerSession>? timerSessions,
     List<TimerCategory>? timerCategories,
     PomodoroSettings? pomodoroSettings,
+    bool? focusModeEnabled,
+    List<String>? allowedAppsInFocusMode,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -320,6 +331,8 @@ class UserData {
       timerSessions: timerSessions ?? this.timerSessions,
       timerCategories: timerCategories ?? this.timerCategories,
       pomodoroSettings: pomodoroSettings ?? this.pomodoroSettings,
+      focusModeEnabled: focusModeEnabled ?? this.focusModeEnabled,
+      allowedAppsInFocusMode: allowedAppsInFocusMode ?? this.allowedAppsInFocusMode,
     );
   }
 }

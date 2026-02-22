@@ -603,7 +603,6 @@ class _AquariumScreenState extends State<AquariumScreen>
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: HabitProgressSection(
           todayQuests: todayQuests,
-          todos: userData.todos,
           onQuestToggle: (questId) =>
               context.read<UserDataProvider>().completeQuestById(questId),
           onDailyQuestTap: () => widget.onNavChanged?.call(1),

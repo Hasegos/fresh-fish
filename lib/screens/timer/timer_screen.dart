@@ -34,6 +34,7 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
   int? _pomodoroPhaseStartMs;
   bool _showTodayTotals = true;
   bool? _lastPomodoroEnabled;
+  bool _isTransitionDialogOpen = false;
 
   @override
   void initState() {
@@ -270,14 +271,16 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
       await context.read<UserDataProvider>().refreshUserData();
       if (!mounted) return;
       _completedFocusSessions++;
+
+      final isLongBreak = _completedFocusSessions % settings.sessionsPerCycle == 0;
+      final nextPhase =
+          isLongBreak ? PomodoroPhase.longBreak : PomodoroPhase.shortBreak;
+
+      await _showPhaseChangeDialogAndStart(nextPhase, settings);
+      return;
     }
 
-    if (_pomodoroPhase == PomodoroPhase.focus) {
-      final isLongBreak = _completedFocusSessions % settings.sessionsPerCycle == 0;
-      _pomodoroPhase = isLongBreak ? PomodoroPhase.longBreak : PomodoroPhase.shortBreak;
-    } else {
-      _pomodoroPhase = PomodoroPhase.focus;
-    }
+    _pomodoroPhase = PomodoroPhase.focus;
 
     _pomodoroPhaseSeconds = 0;
     _pomodoroPhaseStartMs = DateTime.now().millisecondsSinceEpoch;
@@ -285,6 +288,62 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
     if (_isRunning) {
       _schedulePomodoroNotification(settings);
     }
+  }
+
+  Future<void> _showPhaseChangeDialogAndStart(
+    PomodoroPhase nextPhase,
+    PomodoroSettings settings,
+  ) async {
+    if (_isTransitionDialogOpen || !mounted) return;
+
+    _timer?.cancel();
+    NotificationService.instance.cancelPomodoroNotifications();
+
+    await context.read<AppProvider>().pauseTimer();
+    if (!mounted) return;
+
+    setState(() {
+      _isRunning = false;
+      _pomodoroPhaseSeconds = _pomodoroPhaseDurationSeconds(settings);
+    });
+
+    _isTransitionDialogOpen = true;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('⏰ 집중 시간 완료'),
+          content: Text(
+            nextPhase == PomodoroPhase.longBreak
+                ? '집중 세션이 완료되었습니다. 긴 휴식을 시작할까요?'
+                : '집중 세션이 완료되었습니다. 짧은 휴식을 시작할까요?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+    _isTransitionDialogOpen = false;
+
+    if (!mounted) return;
+
+    await context.read<AppProvider>().resumeTimer();
+    if (!mounted) return;
+
+    setState(() {
+      _pomodoroPhase = nextPhase;
+      _pomodoroPhaseSeconds = 0;
+      _pomodoroPhaseStartMs = DateTime.now().millisecondsSinceEpoch;
+      _isRunning = true;
+    });
+
+    _schedulePomodoroNotification(settings);
+    _startUiTicker();
   }
 
   void _schedulePomodoroNotification(PomodoroSettings settings) {
@@ -311,6 +370,13 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
       case PomodoroPhase.longBreak:
         return 'Long Break';
     }
+  }
+
+  int _displaySessionNumber() {
+    if (_pomodoroPhase == PomodoroPhase.focus) {
+      return _completedFocusSessions + 1;
+    }
+    return _completedFocusSessions;
   }
 
   /// Hex 색상 문자열을 Color 객체로 변환
@@ -468,13 +534,25 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
         ? (_pomodoroPhaseDurationSeconds(settings) - (_isRunning ? _pomodoroPhaseSeconds : 0))
         .clamp(0, _pomodoroPhaseDurationSeconds(settings))
         : todayTotalSeconds + currentRunningSeconds;
+    final isBreakPhase =
+        settings.enabled && _pomodoroPhase != PomodoroPhase.focus;
+    final timerGradient = isBreakPhase
+        ? const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              AppColors.highlightPink,
+              AppColors.accentPastel,
+            ],
+          )
+        : AppColors.progressGradient;
 
     return Container(
       width: double.infinity,
       height: MediaQuery.of(context).size.height * 0.28,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       decoration: BoxDecoration(
-        gradient: AppColors.progressGradient,
+        gradient: timerGradient,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -500,7 +578,7 @@ class _TimerScreenState extends State<TimerScreen> with WidgetsBindingObserver {
           const SizedBox(height: 10),
           if (settings.enabled && hasCategory && _isRunning)
             Text(
-              '${_pomodoroPhaseLabel(_pomodoroPhase)} · Session ${_completedFocusSessions + 1}/${settings.sessionsPerCycle}',
+              '${_pomodoroPhaseLabel(_pomodoroPhase)} · Session ${_displaySessionNumber()}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
