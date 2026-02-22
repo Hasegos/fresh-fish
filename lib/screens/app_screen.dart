@@ -9,7 +9,6 @@ import '../models/user_data_model.dart';
 import '../utils/quest_utils.dart';
 import 'onboarding/onboarding_screen.dart';
 import 'onboarding/category_selection_screen.dart';
-import 'onboarding/egg_selection_screen.dart';
 import 'main/main_screen.dart';
 
 /// 앱 메인 진입점
@@ -74,17 +73,12 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   int _step = 0;
   List<String> _selectedCategories = [];
-  FishType? _selectedFish;
+  static const FishType _defaultFishType = FishType.tropical;
 
   /// 사용자 데이터 생성 (onboarding 완료 시)
   Future<void> _createUserData() async {
-    if (_selectedFish == null) {
-      debugPrint('❌ 선택된 물고기가 없음');
-      return;
-    }
-
     try {
-      debugPrint('🎣 UserData 생성 중... (fish: $_selectedFish, categories: $_selectedCategories)');
+      debugPrint('🎣 UserData 생성 중... (fish: $_defaultFishType, categories: $_selectedCategories)');
       
       final uuid = const Uuid();
       final userId = uuid.v4();
@@ -92,7 +86,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       // Fish 객체 생성
       final fish = Fish(
         id: userId,
-        type: _selectedFish!,
+        type: _defaultFishType,
         level: 1,
         exp: 0,
         hp: 100,
@@ -149,17 +143,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           onComplete: (categories) {
             setState(() {
               _selectedCategories = categories;
-              _step = 2;
             });
-          },
-        );
-      case 2:
-        return EggSelectionScreen(
-          selectedCategories: _selectedCategories,
-          onComplete: (selectedFishType) async {
-            debugPrint('🎉 EggSelection 완료 → UserData 생성 및 저장');
-            setState(() => _selectedFish = selectedFishType);
-            await _createUserData();
+            _createUserData();
           },
         );
       default:

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:device_apps/device_apps.dart';
 
 import '../../providers/app_provider.dart';
 import '../../models/user_data_model.dart';
@@ -543,29 +542,17 @@ class SettingsScreen extends StatelessWidget {
   // -------------------------
 
   Future<List<String>> _getInstalledApps() async {
-    try {
-      final apps = await DeviceApps.getInstalledApplications(
-        includeSystemApps: false,
-        onlyAppsWithLaunchIntent: true,
-      );
-      
-      return apps
-          .map((app) => app.appName)
-          .where((name) => name != 'Fresh Fish') // 자신의 앱 제외
-          .toList()
-          .take(20) // 처음 20개만 표시
-          .toList();
-    } catch (e) {
-      debugPrint('앱 목록 조회 실패: $e');
-      // 오류 시 기본 목록 반환
-      return [
-        'Chrome',
-        'Gmail',
-        'Maps',
-        'YouTube',
-        'Spotify',
-      ];
-    }
+    // 정적 앱 목록 반환
+    return [
+      'Chrome',
+      'Gmail',
+      'Maps',
+      'YouTube',
+      'Spotify',
+      'Notion',
+      'Slack',
+      'Zoom',
+    ];
   }
 
   void _showFocusModeMenu(BuildContext context, AppProvider p) {
@@ -588,6 +575,18 @@ class SettingsScreen extends StatelessWidget {
               'Phone',
               'Messages',
               'Emergency',
+            ];
+
+            // 추가 가능한 앱 목록 (정적)
+            final additionalApps = [
+              'Chrome',
+              'Gmail',
+              'Maps',
+              'YouTube',
+              'Spotify',
+              'Notion',
+              'Slack',
+              'Zoom',
             ];
 
             return SingleChildScrollView(
@@ -664,57 +663,30 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '설치된 앱 중 선택하세요',
+                      '허용할 앱을 선택하세요',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // 설치된 앱 목록 (동적 로드)
-                    FutureBuilder<List<String>>(
-                      future: _getInstalledApps(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Padding(
-                            padding: EdgeInsets.all(24.0),
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primaryPastel,
-                              ),
+                    // 추가 앱 목록 (정적)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: additionalApps
+                          .map(
+                            (app) => _buildAppChip(
+                              app,
+                              _getAppIcon(app),
+                              allowedApps.contains(app),
+                              () async {
+                                await _toggleAllowedApp(p, app);
+                                setState(() {});
+                              },
                             ),
-                          );
-                        }
-
-                        if (snapshot.hasError) {
-                          return Text(
-                            '앱 목록을 불러올 수 없습니다: ${snapshot.error}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
-                            ),
-                          );
-                        }
-
-                        final additionalApps = snapshot.data ?? [];
-                        return Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: additionalApps
-                              .map(
-                                (app) => _buildAppChip(
-                                  app,
-                                  _getAppIcon(app),
-                                  allowedApps.contains(app),
-                                  () async {
-                                    await _toggleAllowedApp(p, app);
-                                    setState(() {});
-                                  },
-                                ),
-                              )
-                              .toList(),
-                        );
-                      },
+                          )
+                          .toList(),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
