@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/user_data_provider.dart';
 import '../../models/user_data_model.dart';
 import '../../models/fish_model.dart';
@@ -8,7 +11,7 @@ import '../../widgets/habit_progress_section.dart';
 import '../../widgets/god_rays_painter.dart';
 import '../../widgets/bubble_painter.dart';
 
-/// 메인 어항 화면 - WebP 배경 + CustomPainter 애니메이션
+/// 메인 어항 화면 - 정적 배경 + (프레임 PNG) 물고기 유영 + CustomPainter(빛/거품)
 class AquariumScreen extends StatefulWidget {
   final Function(int)? onNavChanged;
 
@@ -26,14 +29,12 @@ class _AquariumScreenState extends State<AquariumScreen>
   @override
   void initState() {
     super.initState();
-    
-    // 애니메이션 컨트롤러 초기화 (30초로 느리게)
+
     _animationController = AnimationController(
       duration: const Duration(seconds: 30),
       vsync: this,
-    )..repeat(); // 무한 반복
-    
-    // 거품 생성 (더 많이)
+    )..repeat();
+
     _bubbles = generateBubbles(40);
   }
 
@@ -61,16 +62,11 @@ class _AquariumScreenState extends State<AquariumScreen>
 
           return Column(
             children: [
-              // Top 60% - Aquarium Section
               SizedBox(
                 height: MediaQuery.of(context).size.height * 0.60,
                 child: _buildAquariumSection(context, userData),
               ),
-
-              // Bottom 40% - Task List Section
-              Expanded(
-                child: _buildMissionArea(context, userData),
-              ),
+              Expanded(child: _buildMissionArea(context, userData)),
             ],
           );
         },
@@ -81,36 +77,65 @@ class _AquariumScreenState extends State<AquariumScreen>
   Widget _buildAquariumSection(BuildContext context, UserData userData) {
     final fish = userData.fish;
 
+    // ✅ 3종류 x 3프레임 (전부 "왼쪽을 바라보는" 프레임이라고 가정)
+    const fishTypes = <List<String>>[
+      [
+        'assets/images/fish/type1_1.png',
+        'assets/images/fish/type1_2.png',
+        'assets/images/fish/type1_3.png',
+      ],
+      [
+        'assets/images/fish/type2_1.png',
+        'assets/images/fish/type2_2.png',
+        'assets/images/fish/type2_3.png',
+      ],
+      [
+        'assets/images/fish/type3_1.png',
+        'assets/images/fish/type3_2.png',
+        'assets/images/fish/type3_3.png',
+      ],
+    ];
+
     return Stack(
       children: [
-        // 전체 화면 수족관 애니메이션
         Positioned.fill(
           child: Stack(
             children: [
-              // 1. WebP 정적 배경 (애니메이션 GIF처럼 자동 재생되지만, 반복은 부드럽게)
+              // 1) 정적 배경
               Positioned.fill(
                 child: Image.asset(
-                  'assets/videos/aquarium_vid.webp',
+                  'assets/images/aquarium_bg.png',
                   fit: BoxFit.cover,
-                  gaplessPlayback: true, // 부드러운 전환
                 ),
               ),
-              
-              // 2. 애니메이션 레이어 (거품과 빛만)
+
+              // 2) 물고기 유영 레이어 (후진 제거: 이동방향=머리방향)
+              Positioned.fill(
+                child: FishSwimLayerFrames(
+                  animation: _animationController,
+                  fishTypes: fishTypes,
+                  count: 10,
+                  renderSize: 56, // ✅ 작게 쓸거라 대충 56으로 고정
+                  fps: 10,
+                  // ✅ 네 PNG가 기본으로 "왼쪽을 바라봄"
+                  defaultFacing: FishFacing.left,
+                  // ✅ 좌/우로 다니되, 항상 앞으로 헤엄치게(필요하면 false로 바꾸면 한 방향만)
+                  allowBothDirections: true,
+                ),
+              ),
+
+              // 3) 빛/거품 이펙트
               AnimatedBuilder(
                 animation: _animationController,
                 builder: (context, child) {
                   return Stack(
                     children: [
-                      // God Rays 레이어 (빛 광선)
                       CustomPaint(
                         size: Size.infinite,
                         painter: GodRaysPainter(
                           animationValue: _animationController.value,
                         ),
                       ),
-                      
-                      // 거품 레이어 (최상단)
                       CustomPaint(
                         size: Size.infinite,
                         painter: BubblePainter(
@@ -126,7 +151,7 @@ class _AquariumScreenState extends State<AquariumScreen>
           ),
         ),
 
-        // HUD (Top-Left)
+        // HUD
         Positioned(
           top: 16,
           left: 16,
@@ -155,10 +180,7 @@ class _AquariumScreenState extends State<AquariumScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            fish.type.emoji,
-            style: const TextStyle(fontSize: 20),
-          ),
+          Text(fish.type.emoji, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 8),
           SizedBox(
             width: 90,
@@ -231,6 +253,197 @@ class _AquariumScreenState extends State<AquariumScreen>
           onQuestToggle: (questId) =>
               context.read<UserDataProvider>().completeQuestById(questId),
           onDailyQuestTap: () => widget.onNavChanged?.call(1),
+        ),
+      ),
+    );
+  }
+}
+
+/// ----------------------------
+/// FishSwimLayerFrames
+/// - 3종류 x 3프레임 PNG 애니메이션
+/// - 후진 방지: "머리 방향 = 이동 방향"
+/// ----------------------------
+
+enum FishFacing { left, right }
+
+class _SwimFishFrames {
+  _SwimFishFrames({
+    required this.frames,
+    required this.facing,
+    required this.baseY,
+    required this.speed,
+    required this.amp,
+    required this.freq,
+    required this.phase,
+    required this.size,
+    required this.startX,
+    required this.opacity,
+    required this.frameOffset,
+  });
+
+  final List<String> frames; // 3프레임
+  final FishFacing facing; // 실제 이동방향
+
+  final double baseY;
+  final double speed;
+  final double amp;
+  final double freq;
+  final double phase;
+  final double size;
+  final double startX;
+  final double opacity;
+  final int frameOffset;
+}
+
+class FishSwimLayerFrames extends StatefulWidget {
+  const FishSwimLayerFrames({
+    super.key,
+    required this.animation,
+    required this.fishTypes,
+    this.count = 8,
+    this.renderSize = 56,
+    this.fps = 10,
+    this.defaultFacing = FishFacing.left,
+    this.allowBothDirections = true,
+  });
+
+  final Animation<double> animation;
+
+  /// 3종류 x 3프레임
+  final List<List<String>> fishTypes;
+
+  final int count;
+  final double renderSize;
+  final int fps;
+
+  /// 프레임 PNG가 기본으로 바라보는 방향
+  final FishFacing defaultFacing;
+
+  /// true면 좌/우로 섞어서 다님. false면 defaultFacing 방향으로만 다님
+  final bool allowBothDirections;
+
+  @override
+  State<FishSwimLayerFrames> createState() => _FishSwimLayerFramesState();
+}
+
+class _FishSwimLayerFramesState extends State<FishSwimLayerFrames> {
+  final _rng = Random();
+  late final List<_SwimFishFrames> _fishes;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final safeTypes =
+    widget.fishTypes.where((t) => t.isNotEmpty).toList(growable: false);
+
+    _fishes = List.generate(widget.count, (_) {
+      final frames = safeTypes[_rng.nextInt(safeTypes.length)];
+
+      final facing = widget.allowBothDirections
+          ? (_rng.nextBool() ? FishFacing.left : FishFacing.right)
+          : widget.defaultFacing;
+
+      final baseY = 0.12 + _rng.nextDouble() * 0.72;
+      final speed = 18 + _rng.nextDouble() * 55;
+      final amp = 5 + _rng.nextDouble() * 12;
+      final freq = 0.7 + _rng.nextDouble() * 1.4;
+      final phase = _rng.nextDouble() * pi * 2;
+
+      final size = widget.renderSize * (0.75 + _rng.nextDouble() * 0.6);
+
+      // 시작 X (대충)
+      final startX = _rng.nextDouble() * 800;
+
+      final opacity = 0.70 + _rng.nextDouble() * 0.30;
+      final frameOffset = _rng.nextInt(max(1, frames.length));
+
+      return _SwimFishFrames(
+        frames: frames,
+        facing: facing,
+        baseY: baseY,
+        speed: speed,
+        amp: amp,
+        freq: freq,
+        phase: phase,
+        size: size,
+        startX: startX,
+        opacity: opacity,
+        frameOffset: frameOffset,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.fishTypes.isEmpty) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final h = c.maxHeight;
+
+        return AnimatedBuilder(
+          animation: widget.animation,
+          builder: (context, child) {
+            final t = widget.animation.value * 30.0; // 0~30초
+            return Stack(
+              children: [
+                for (final f in _fishes) _buildOneFish(f, w, h, t),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildOneFish(_SwimFishFrames f, double w, double h, double t) {
+    // ✅ 이동방향에 따라 x 증가/감소를 맞춰 "후진" 제거
+    final travel = t * f.speed;
+    final total = w + f.size * 2;
+
+    final x = (f.facing == FishFacing.left)
+    // 왼쪽으로 전진: x가 줄어드는 느낌
+        ? (total - ((f.startX + travel) % total)) - f.size
+    // 오른쪽으로 전진: x가 늘어나는 느낌
+        : ((f.startX + travel) % total) - f.size;
+
+    final yBase = h * f.baseY;
+    final yWave = sin(t * f.freq + f.phase) * f.amp;
+    final y = yBase + yWave;
+
+    final fps = max(1, widget.fps);
+    final frameIndex =
+    (((t * fps).floor() + f.frameOffset) % f.frames.length);
+
+    // ✅ PNG 기본 방향(defaultFacing)과 실제 진행방향(facing)이 다르면 flip
+    final shouldFlip =
+        (widget.defaultFacing == FishFacing.left && f.facing == FishFacing.right) ||
+            (widget.defaultFacing == FishFacing.right && f.facing == FishFacing.left);
+
+    return Positioned(
+      left: x,
+      top: y,
+      child: Opacity(
+        opacity: f.opacity,
+        child: Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..scale(shouldFlip ? -1.0 : 1.0, 1.0, 1.0),
+          child: SizedBox(
+            width: f.size,
+            height: f.size,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              alignment: Alignment.center,
+              child: Image.asset(
+                f.frames[frameIndex],
+                filterQuality: FilterQuality.none,
+              ),
+            ),
+          ),
         ),
       ),
     );
