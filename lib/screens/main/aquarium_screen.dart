@@ -60,13 +60,20 @@ class _AquariumScreenState extends State<AquariumScreen>
             );
           }
 
-          return Column(
+          return Stack(
             children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.60,
+              // 수족관 전체 배경
+              Positioned.fill(
                 child: _buildAquariumSection(context, userData),
               ),
-              Expanded(child: _buildMissionArea(context, userData)),
+              // 하단 정보창 (오버레이)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                top: MediaQuery.of(context).size.height * 0.56,
+                child: _buildMissionArea(context, userData),
+              ),
             ],
           );
         },
@@ -167,13 +174,17 @@ class _AquariumScreenState extends State<AquariumScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.50),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: const Color(0xFF0277BD).withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -244,15 +255,45 @@ class _AquariumScreenState extends State<AquariumScreen>
         .where((quest) => quest.date == userData.currentDate)
         .toList();
 
-    return Container(
-      color: AppColors.background,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: HabitProgressSection(
-          todayQuests: todayQuests,
-          onQuestToggle: (questId) =>
-              context.read<UserDataProvider>().completeQuestById(questId),
-          onDailyQuestTap: () => widget.onNavChanged?.call(1),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(32),
+        topRight: Radius.circular(32),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFB3E5FC).withValues(alpha: 0.75),
+              const Color(0xFFE1F5FE).withValues(alpha: 0.92),
+              const Color(0xFFF0F9FF),
+            ],
+            stops: const [0.0, 0.35, 1.0],
+          ),
+          border: const Border(
+            top: BorderSide(
+              color: Color(0xFFFFFFFF),
+              width: 2.5,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF01579B).withValues(alpha: 0.15),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+          child: HabitProgressSection(
+            todayQuests: todayQuests,
+            onQuestToggle: (questId) =>
+                context.read<UserDataProvider>().completeQuestById(questId),
+            onDailyQuestTap: () => widget.onNavChanged?.call(1),
+          ),
         ),
       ),
     );

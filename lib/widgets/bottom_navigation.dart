@@ -4,7 +4,7 @@ import '../theme/app_text_styles.dart';
 
 /// 하단 네비게이션 바 위젯
 class BottomNavigation extends StatelessWidget {
-  static const double height = 56;
+  static const double height = 62;
   final int currentIndex;
   final ValueChanged<int> onTap;
 
@@ -32,8 +32,8 @@ class BottomNavigation extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+          height: 62,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -80,20 +80,20 @@ class BottomNavigation extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 20,
+              size: 22,
               color: isSelected
                   ? const Color(0xFF81E6D9)
                   : AppColors.textTertiary,
             ),
-            const SizedBox(height: 1),
+            const SizedBox(height: 3),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.clip,
               style: TextStyle(
-                fontSize: 8,
-                height: 1.0,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                fontSize: 11,
+                height: 1.1,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? const Color(0xFF81E6D9)
                     : AppColors.textTertiary,

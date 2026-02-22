@@ -544,6 +544,13 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _title,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.done,
+              textCapitalization: TextCapitalization.none,
+              enableSuggestions: true,
+              autocorrect: false,
+              smartDashesType: SmartDashesType.disabled,
+              smartQuotesType: SmartQuotesType.disabled,
               decoration: const InputDecoration(labelText: '제목'),
               validator: (v) =>
               (v == null || v.trim().isEmpty) ? '제목을 입력해줘' : null,
@@ -595,9 +602,11 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
-                  if (!_formKey.currentState!.validate()) return;
-
                   final provider = context.read<UserDataProvider>();
+                  FocusScope.of(context).unfocus();
+                  await Future<void>.delayed(const Duration(milliseconds: 80));
+
+                  if (!_formKey.currentState!.validate()) return;
                   final title = _title.text.trim();
 
                   String? reminderTime;
