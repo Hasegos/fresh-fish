@@ -180,7 +180,7 @@ class UserDataProvider extends ChangeNotifier {
       reminderTime: reminderTime,
       expReward: expReward,
       goldReward: goldReward,
-      questType: questType ?? m.QuestType.values.first,
+      questType: questType ?? m.QuestType.daily,
       difficulty: difficulty,
 
       // ✅ 업적/통계용

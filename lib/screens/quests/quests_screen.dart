@@ -619,6 +619,7 @@ class _QuestFormSheetState extends State<_QuestFormSheet> {
                       title: title,
                       difficulty: _difficulty,
                       reminderTime: reminderTime,
+                      questType: QuestType.daily,
                     );
                   }
 
