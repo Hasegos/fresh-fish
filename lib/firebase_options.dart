@@ -50,20 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDCEiBbLfd2hDYMDOB_5fxCl4zNxlodi5Y',
-    appId: '1:364045832176:android:8358d629f0a87bf27e1735',
-    messagingSenderId: '364045832176',
-    projectId: 'fresh-fish-2e934',
-    storageBucket: 'fresh-fish-2e934.firebasestorage.app',
+    apiKey: 'AIzaSyDSp4S42W10g6yUPU336eufiMuLdAmVoJA',
+    appId: '1:198885947824:android:454de4fbe55bff66babe75',
+    messagingSenderId: '198885947824',
+    projectId: 'fresh-fish-57977',
+    storageBucket: 'fresh-fish-57977.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyB3DdtRiuIhcrH49uD2ULvwrju3qYjJ__A',
-    appId: '1:364045832176:ios:9fd2ed5c4391c49c7e1735',
-    messagingSenderId: '364045832176',
-    projectId: 'fresh-fish-2e934',
-    storageBucket: 'fresh-fish-2e934.firebasestorage.app',
+    apiKey: 'AIzaSyBQQVJyZU_6ihYWSY1p0jPQAXoHADWbWaQ',
+    appId: '1:198885947824:ios:181954bae1d2fd4ebabe75',
+    messagingSenderId: '198885947824',
+    projectId: 'fresh-fish-57977',
+    storageBucket: 'fresh-fish-57977.firebasestorage.app',
     iosBundleId: 'uc.vibecoding.freshFish',
   );
-
 }
