@@ -152,8 +152,8 @@ fresh-fish/
 <img width="444" height="968" alt="Image" src="https://github.com/user-attachments/assets/77b956a0-a3c9-481a-b439-cff11fe4ba2c" />
 <img width="446" height="957" alt="Image" src="https://github.com/user-attachments/assets/cc086c88-6d9e-4cc1-973c-d160d225f7c4" />
 
-- 메인 담당자 :
--
+- 메인 담당자 : 박영수
+- 관심 카테고리 기반 실시간 업적 매핑 로직 및 성장 알고리즘 최적화
 
 ### 메인 UI (Home)
 <img width="364" height="653" alt="Image" src="https://github.com/user-attachments/assets/90e597cf-45a8-49b1-91f6-86cdece0c628" />
@@ -172,7 +172,7 @@ fresh-fish/
 <img width="357" height="654" alt="Image" src="https://github.com/user-attachments/assets/7d76c8eb-673c-4850-a9aa-cbe2fb2e7189" />
 <img width="352" height="656" alt="Image" src="https://github.com/user-attachments/assets/bf92990b-34eb-4cae-80a2-3f759bf8b016" />
 
-- 메인 담당자 :
+- 메인 담당자 : 박영수
 - 사용자 데이터 기반 실시간 업적 매핑 알고리즘 최적화, 인증 세션 안정화 구현
 
 ### 캘린더 UI (Calendar)
@@ -180,7 +180,7 @@ fresh-fish/
 <img width="340" height="653" alt="Image" src="https://github.com/user-attachments/assets/9d722061-501b-4de8-9158-80519dc126c8" />
 <img width="371" height="652" alt="Image" src="https://github.com/user-attachments/assets/7912ce97-0182-4381-9b12-46423d792cde" />
 
-- 메인 담당자 :
+- 메인 담당자 : 박영수
 - 날짜별 활동 기록 캘린더와 카테고리별 집중 분포 차트를 활용한 맞춤형 통계 대시보드 및 세션 리포트 구현
 
 ### 업적 UI (Achievements)
@@ -194,7 +194,7 @@ fresh-fish/
 <img width="358" height="647" alt="Image" src="https://github.com/user-attachments/assets/572b6f8e-d7b3-494c-9449-824e76c204f8" />
 <img width="361" height="651" alt="Image" src="https://github.com/user-attachments/assets/cf184781-fe14-4308-87c3-b5c0720d4e52" />
 
-- 메인 담당자 :
+- 메인 담당자 : 박영수
 - 활동 기록 캘린더 및 카테고리별 집중 데이터 시각화 차트 구현, Provider 상태 관리 구조 설계 및 도메인 간 의존성 정립
 
 # ✨ 핵심 기능
