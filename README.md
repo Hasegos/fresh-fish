@@ -196,8 +196,8 @@
 ### 업적 UI (Achievements)
 <img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/8594098c-42b2-4d04-aaee-6c83cebe7339" />
 
-- 메인 담당자 :
--
+- 메인 담당자 : 한구윤
+- 사용자 데이터와 연결해 달성 여부/달성률이 실시간으로 반영되도록 연동
 
 ---
 
