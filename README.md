@@ -11,7 +11,7 @@
 
 <table border="1">
     <thead>
-        <tr><td colspan="1" align="center">Fresh Fish</td></tr>
+        <tr><td colspan="5" align="center">Fresh Fish</td></tr>
     </thead>
     <tr align="center">
         <td>팀장 박영수</td>
@@ -51,40 +51,38 @@
 
 # 🛠️ 기술 스택
 
-+ **Frontend (Mobile)**:<img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" /><img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" />
-+ **State Management**:<img src="https://img.shields.io/badge/Provider-4A90E2?style=for-the-badge" />
-+ **Backend / BaaS**:<img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" /><img src="https://img.shields.io/badge/Firebase%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" /><img src="https://img.shields.io/badge/Cloud%20Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" /><img src="https://img.shields.io/badge/Cloud%20Functions-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
-+ **Local Data / Utility**:<img src="https://img.shields.io/badge/SharedPreferences-5C6BC0?style=for-the-badge" /><img src="https://img.shields.io/badge/Hive-F9A825?style=for-the-badge" /><img src="https://img.shields.io/badge/HTTP-607D8B?style=for-the-badge" />
-+ **Notifications / Chart**:<img src="https://img.shields.io/badge/flutter__local__notifications-03A9F4?style=for-the-badge" /><img src="https://img.shields.io/badge/fl__chart-7E57C2?style=for-the-badge" /><img src="https://img.shields.io/badge/table__calendar-26A69A?style=for-the-badge" />
++ **Frontend (Mobile)**: <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" /> <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" />
++ **Backend / BaaS**: <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
++ **Tooling**: <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"> <img src="https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=Figma&logoColor=white"> <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white">
 
 # 📁 디렉토리 구조
 
 ```text
-fresh-fish/
-├── lib/
-│   ├── constants/           # 앱 전역 상수
-│   ├── data/                # 업적/퀘스트 템플릿, 타이머 카테고리 정적 데이터
-│   ├── models/              # UserData, Quest, Timer, Fish 등 도메인 모델
-│   ├── providers/           # AppProvider, UserDataProvider 상태관리
-│   ├── screens/
-│   │   ├── auth/            # 로그인/회원가입
-│   │   ├── onboarding/      # 온보딩/카테고리 선택
-│   │   ├── main/            # 메인(수족관 + 탭 구조)
-│   │   ├── quests/          # 퀘스트/데일리 화면
-│   │   ├── timer/           # 집중 타이머
-│   │   ├── calendar/        # 캘린더/통계
-│   │   ├── achievements/    # 업적
-│   │   ├── settings/        # 설정
-│   │   └── menu/            # 메뉴 허브 화면
-│   ├── services/            # Firebase, 로컬 스토리지, 알림 서비스
-│   ├── theme/               # 테마/컬러/텍스트 스타일
-│   ├── utils/               # 성장/레벨/퀘스트/시간 관련 유틸
-│   ├── widgets/             # 공통 위젯 + 수족관 커스텀 페인터
-│   ├── firebase_options.dart
-│   └── main.dart            # 앱 시작점
-├── assets/                  # 이미지/물고기 스프라이트/비주얼 리소스
-├── android/                 # Android 네이티브 설정
-├── ios/                     # iOS 네이티브 설정
+📦 fresh-fish/
+├── 📁 lib/
+│   ├── 📌 constants/           # 앱 전역 상수
+│   ├── 📡 data/                # 업적/퀘스트 템플릿, 타이머 카테고리 정적 데이터
+│   ├── 🧾 models/              # UserData, Quest, Timer, Fish 등 도메인 모델
+│   ├── 🔄 providers/           # AppProvider, UserDataProvider 상태관리
+│   ├── 📱 screens/
+│   │   ├── 📁 auth/            # 로그인/회원가입
+│   │   ├── 📁 onboarding/      # 온보딩/카테고리 선택
+│   │   ├── 📁main/            # 메인(수족관 + 탭 구조)
+│   │   ├── 📁quests/          # 퀘스트/데일리 화면
+│   │   ├── 📁timer/           # 집중 타이머
+│   │   ├── 📁calendar/        # 캘린더/통계
+│   │   ├── 📁achievements/    # 업적
+│   │   ├── 📁settings/        # 설정
+│   │   └── 📁menu/            # 메뉴 허브 화면
+│   ├── 🔌 services/            # Firebase, 로컬 스토리지, 알림 서비스
+│   ├── 🎨 theme/               # 테마/컬러/텍스트 스타일
+│   ├── 🧰 utils/               # 성장/레벨/퀘스트/시간 관련 유틸
+│   ├── 🧩 widgets/             # 공통 위젯 + 수족관 커스텀 페인터
+│   ├── 🔥 firebase_options.dart
+│   └── 🚀 main.dart            # 앱 시작점
+├── 🖼️ assets/                  # 이미지/물고기 스프라이트/비주얼 리소스
+├── 🤖 android/                 # Android 네이티브 설정
+├── 🍎 ios/                     # iOS 네이티브 설정
 ├── firestore.rules          # Firestore 보안 규칙
 ├── firebase.json            # Firebase 설정
 └── pubspec.yaml             # 의존성/에셋/프로젝트 설정
@@ -143,56 +141,70 @@ fresh-fish/
 
 ### 로그인 / 회원가입 UI (Auth)
 <img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/c2145471-2778-4189-88fa-9c4a7acc3f5d" />
-<img width="367" height="651" alt="Image" src="https://github.com/user-attachments/assets/18aa1610-342b-4daf-85cd-b1d184004082" />
+<img width="342" height="651" alt="Image" src="https://github.com/user-attachments/assets/18aa1610-342b-4daf-85cd-b1d184004082" />
 
 - 메인 담당자 : 한구윤
 - 인증 세션 관리 및 실시간 업적 매핑 알고리즘 최적화
 
+---
+
 ### 온보딩 UI (Onboarding)
-<img width="444" height="968" alt="Image" src="https://github.com/user-attachments/assets/77b956a0-a3c9-481a-b439-cff11fe4ba2c" />
-<img width="446" height="957" alt="Image" src="https://github.com/user-attachments/assets/cc086c88-6d9e-4cc1-973c-d160d225f7c4" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/77b956a0-a3c9-481a-b439-cff11fe4ba2c" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/cc086c88-6d9e-4cc1-973c-d160d225f7c4" />
 
 - 메인 담당자 : 박영수
 - 관심 카테고리 기반 실시간 업적 매핑 로직 및 성장 알고리즘 최적화
 
+---
+
 ### 메인 UI (Home)
-<img width="364" height="653" alt="Image" src="https://github.com/user-attachments/assets/90e597cf-45a8-49b1-91f6-86cdece0c628" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/90e597cf-45a8-49b1-91f6-86cdece0c628" />
 
 - 메인 담당자 : 한구윤, 박영수
 - 프레임 저하 없는 최적화된 수족관 애니메이션 구현, 실시간 데이터 연동을 통한 사용자 맞춤형 성장형 UI 완성
 
+---
+
 ### 퀘스트 UI (Quests)
-<img width="359" height="653" alt="Image" src="https://github.com/user-attachments/assets/29fbb8c8-c317-4a72-a20d-29899bb91d10" />
-<img width="356" height="653" alt="Image" src="https://github.com/user-attachments/assets/bd98acd5-94be-4dfc-8c10-12bcbdc73302" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/29fbb8c8-c317-4a72-a20d-29899bb91d10" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/bd98acd5-94be-4dfc-8c10-12bcbdc73302" />
 
 - 메인 담당자 : 박수민
 - 인증 세션 및 실시간 업적 알고리즘 최적화, 보상 기반 성장 로직 구현, 데이터 동기화와 프로젝트 통합 운영 관리
 
+---
+
 ### 타이머 UI (Timer)
-<img width="357" height="654" alt="Image" src="https://github.com/user-attachments/assets/7d76c8eb-673c-4850-a9aa-cbe2fb2e7189" />
-<img width="352" height="656" alt="Image" src="https://github.com/user-attachments/assets/bf92990b-34eb-4cae-80a2-3f759bf8b016" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/7d76c8eb-673c-4850-a9aa-cbe2fb2e7189" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/bf92990b-34eb-4cae-80a2-3f759bf8b016" />
 
 - 메인 담당자 : 박영수
 - 사용자 데이터 기반 실시간 업적 매핑 알고리즘 최적화, 인증 세션 안정화 구현
 
+---
+
 ### 캘린더 UI (Calendar)
-<img width="352" height="656" alt="Image" src="https://github.com/user-attachments/assets/ff863e67-c3cf-46a8-8a68-fd9609582162" />
-<img width="340" height="653" alt="Image" src="https://github.com/user-attachments/assets/9d722061-501b-4de8-9158-80519dc126c8" />
-<img width="371" height="652" alt="Image" src="https://github.com/user-attachments/assets/7912ce97-0182-4381-9b12-46423d792cde" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/ff863e67-c3cf-46a8-8a68-fd9609582162" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/9d722061-501b-4de8-9158-80519dc126c8" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/7912ce97-0182-4381-9b12-46423d792cde" />
 
 - 메인 담당자 : 박영수
 - 날짜별 활동 기록 캘린더와 카테고리별 집중 분포 차트를 활용한 맞춤형 통계 대시보드 및 세션 리포트 구현
 
+---
+
 ### 업적 UI (Achievements)
-<img width="361" height="649" alt="Image" src="https://github.com/user-attachments/assets/8594098c-42b2-4d04-aaee-6c83cebe7339" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/8594098c-42b2-4d04-aaee-6c83cebe7339" />
 
 - 메인 담당자 :
 -
 
+---
+
 ### 셋팅 UI (Settings)
-<img width="361" height="652" alt="Image" src="https://github.com/user-attachments/assets/d1dbeeb8-7050-46aa-9b07-6bc88adebcb9" />
-<img width="358" height="647" alt="Image" src="https://github.com/user-attachments/assets/572b6f8e-d7b3-494c-9449-824e76c204f8" />
-<img width="361" height="651" alt="Image" src="https://github.com/user-attachments/assets/cf184781-fe14-4308-87c3-b5c0720d4e52" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/d1dbeeb8-7050-46aa-9b07-6bc88adebcb9" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/572b6f8e-d7b3-494c-9449-824e76c204f8" />
+<img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/cf184781-fe14-4308-87c3-b5c0720d4e52" />
 
 - 메인 담당자 : 박영수
 - 활동 기록 캘린더 및 카테고리별 집중 데이터 시각화 차트 구현, Provider 상태 관리 구조 설계 및 도메인 간 의존성 정립
