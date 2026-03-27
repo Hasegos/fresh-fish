@@ -1,13 +1,13 @@
 # Fresh Fish
 
-# 📁 프로젝트 개요
+## 📁 프로젝트 개요
 
 + **Fresh Fish**는 “루틴을 게임처럼” 관리하는 모바일 자기계발 앱입니다.
 + 사용자는 **퀘스트/할 일/집중 타이머**를 통해 하루의 목표를 수행하고, 보상(경험치/골드)을 얻어 수족관을 성장시키는 흐름으로 동기부여를 받습니다.
 + 앱은 **온보딩(카테고리 선택)**, **데일리 퀘스트**, **포모도로 타이머**, **업적/캘린더 통계**, **설정(알림 모드 등)** 기능을 제공합니다.
 + Flutter + Firebase 기반 개인 프로젝트 구조로 구성되어 있으며, Provider 상태관리와 로컬 저장소를 함께 사용합니다.
 
-# 🤝 팀 소개
+## 🤝 팀 소개
 
 <table border="1">
     <thead>
@@ -49,13 +49,13 @@
     </tr>
 </table>
 
-# 🛠️ 기술 스택
+## 🛠️ 기술 스택
 
 + **Frontend (Mobile)**: <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" /> <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" />
 + **Backend / BaaS**: <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
 + **Tooling**: <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"> <img src="https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=Figma&logoColor=white"> <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white">
 
-# 📁 디렉토리 구조
+## 📁 디렉토리 구조
 
 ```text
 📦 fresh-fish/
@@ -88,7 +88,7 @@
 └── pubspec.yaml             # 의존성/에셋/프로젝트 설정
 ```
 
-# 📊 ERD (Entity Relationship Diagram)
+## 📊 ERD (Entity Relationship Diagram)
 
 ## 👤 Users (사용자)
 |필드명 (Field)| 타입 (Type) | 설명       |
@@ -137,7 +137,12 @@
  | completed| bool      | 완료 상태              |
 | createdAt| int       | 생성 시각     |
 
-# 📱 화면 구성
+## 📚 프로젝트 문서 / 회고
+
++ 기획, 요구사항 정의, ERD 상세, 화면 설계, 회고는 아래 노션에 정리했습니다.
+  + Notion: [갓생어](https://www.notion.so/2dfbe056f6498028b472eddf4768d9ad)
+
+## 📱 화면 구성
 
 ### 로그인 / 회원가입 UI (Auth)
 <img width="342" height="648" alt="Image" src="https://github.com/user-attachments/assets/c2145471-2778-4189-88fa-9c4a7acc3f5d" />
@@ -209,7 +214,7 @@
 - 메인 담당자 : 박영수
 - 활동 기록 캘린더 및 카테고리별 집중 데이터 시각화 차트 구현, Provider 상태 관리 구조 설계 및 도메인 간 의존성 정립
 
-# ✨ 핵심 기능
+## ✨ 핵심 기능
 
 ### 1) 온보딩 & 사용자 흐름
 + 앱 첫 실행 시 온보딩과 카테고리 선택을 거쳐 초기 사용자 데이터를 생성합니다.
@@ -235,7 +240,7 @@
 + 알림 모드(소리/진동/무음) 설정을 제공합니다.
 + 설정 화면에서 업적 화면 진입 등 사용자 관리 동선을 제공합니다.
 
-# 📌 API 명세표
+## 📌 API 명세표
 | 분류 | 기능명 | 메서드/경로 | 입력 데이터 | 설명 |
 | --- | --- | --- | --- | --- |
 | 인증 | 익명 로그인 | signInAnonymously | - | Firebase 익명 인증을 수행하고 유저 UID를 발급받음 |
